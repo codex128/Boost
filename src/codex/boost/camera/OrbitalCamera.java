@@ -85,13 +85,12 @@ public class OrbitalCamera extends AbstractControl implements AnalogFunctionList
         }
         distance = distanceRange.applyConstrain(distance);
     }
-
     @Override
     protected void controlRender(RenderManager rm, ViewPort vp) {
     }
-
     @Override
     public void valueActive(FunctionId func, double value, double tpf) {
+        if (!enabled) return;
         if (func == ROTATE_XZ) {
             rotateHorizontally((float)(value*tpf));
         }
@@ -99,9 +98,9 @@ public class OrbitalCamera extends AbstractControl implements AnalogFunctionList
             rotateVertically(-(float)(value*tpf));
         }
     }
-
     @Override
     public void valueChanged(FunctionId func, InputState value, double tpf) {
+        if (!enabled) return;
         if (func == ZOOM) {
             distance -= value.asNumber();
         }
