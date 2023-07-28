@@ -14,11 +14,17 @@ public enum Motion {
      */
     INSTANT,
     /**
-     * Move a constant speed straight toward the ideal location.
+     * Move at constant speed straight toward the ideal location.
+     * Name is not correct, use {@code CONSTANT} instead.
      */
+    @Deprecated
     LINEAR,
     /**
-     * Smooth motion toward the ideal location.
+     * Move at a constant speed straight toward the ideal location.
+     */
+    CONSTANT,
+    /**
+     * Smooth motion using linear interpolation toward the ideal location.
      */
     LERP;
 }
