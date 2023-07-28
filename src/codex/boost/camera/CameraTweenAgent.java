@@ -4,17 +4,10 @@
  */
 package codex.boost.camera;
 
-import com.jme3.renderer.Camera;
-
 /**
- * Interface for controlling a camera.
- * 
+ *
  * @author codex
  */
-public interface CameraAgent {
-    
-    public void updateCamera(Camera camera, float tpf);
-    public void onAgentEnabled(Camera camera);
-    public void onAgentDisabled();
+public interface CameraTweenAgent extends CameraDirector {
     
 }
