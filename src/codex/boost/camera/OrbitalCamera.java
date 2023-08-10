@@ -5,7 +5,6 @@
 package codex.boost.camera;
 
 import codex.boost.Motion;
-import static codex.boost.Motion.LERP;
 import codex.boost.math.FDomain;
 import com.jme3.math.FastMath;
 import com.jme3.math.Plane;
@@ -27,7 +26,8 @@ import com.simsilica.lemur.input.StateFunctionListener;
  *
  * @author gary
  */
-public class OrbitalCamera extends AbstractControl implements AnalogFunctionListener, StateFunctionListener {
+public class OrbitalCamera extends AbstractControl 
+        implements AnalogFunctionListener, StateFunctionListener {
 
     public static final String INPUT_GROUP = "orbital_cam_input_group";
     public static final FunctionId ROTATE_XZ = new FunctionId(INPUT_GROUP, "rotate_xz"),
@@ -535,6 +535,7 @@ public class OrbitalCamera extends AbstractControl implements AnalogFunctionList
      * @param im
      */
     public static void initializeInputMappings(InputMapper im) {
+        if (inputInitialized) return;
         im.map(ROTATE_XZ, Axis.MOUSE_X);
         im.map(ROTATE_Y, Axis.MOUSE_Y);
         im.map(ZOOM, Axis.MOUSE_WHEEL);

@@ -1,0 +1,20 @@
+
+
+float random(float value, float seed) {
+    return fract(sin(value) * seed);
+}
+float randomVecToFloat(vec2 vector, float seed) {
+    return fract(sin(dot(vector.xy, vec2(14.3423, 76.8593))) * seed);
+}
+vec2 randomVec(vec2 vector, float seed) {
+    return vec2(
+        random(dot(vector, vec2(85.329, 17.17)), seed),
+        random(dot(vector, vec2(15.905, 12.532)), seed + 74.359));
+}
+vec3 randomVec(vec3 vector, float seed) {
+    return vec3(
+        random(dot(vector, vec3(85.329, 17.17, 532.43)), seed),
+        random(dot(vector, vec3(15.905, 12.532, -80.6)), seed + 74.359),
+        random(dot(vector, vec3(8.492, 130.591, 21.47)), seed - 42.308));
+}
+
