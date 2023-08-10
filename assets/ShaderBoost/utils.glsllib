@@ -1,0 +1,18 @@
+
+uniform vec3 g_CameraPosition;
+
+/**
+ * Calculates the view direction based on the vertex position.
+ */
+vec3 getViewDirection(vec3 vertexPosition) {
+    return normalize(g_CameraPosition - vertexPosition);
+}
+
+/**
+ * Tests if the input is an even number.
+ */
+bool isEven(int n) {
+    return mod(n, 2) < 1;
+}
+
+

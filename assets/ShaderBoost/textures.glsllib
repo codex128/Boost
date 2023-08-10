@@ -1,0 +1,90 @@
+
+#import "ShaderLibrary/random.glsllib"
+#import "ShaderLibrary/utils.glsllib"
+
+/**
+ * Creates a checker pattern.
+ */
+float checker(vec2 uv, float scale) {
+    uv *= scale;
+    vec2 i = floor(uv);
+    bool x = isEven(int(i.x));
+    bool y = isEven(int(i.y));
+    return (x == y ? 1.0 : 0.0);
+}
+
+/**
+ * Generates 2D noise.
+ */
+float noise2D(vec2 uv, float scale, float seed) {
+    uv *= scale;
+    vec2 i = floor(uv);
+    vec2 f = fract(uv);
+    float a = randomVec2ToFloat(i, seed);
+    float b = randomVec2ToFloat(i + vec2(1.0, 0.0), seed);
+    float c = randomVec2ToFloat(i + vec2(0.0, 1.0), seed);
+    float d = randomVec2ToFloat(i + vec2(1.0, 1.0), seed);
+    vec2 u = f*f*(3.0-2.0*f);
+    return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+}
+
+/**
+ * Generates a voronoi texture.
+ * output.rgb = color of territory
+ * output.a   = distance to territory center
+ */
+vec4 voronoi(vec2 uv, float scale, float seed) {    
+    uv *= scale;
+    // divide the space into a grid, with i being the cell index,
+    // and f being the location relative to the cell (or cell space)
+    vec2 i = floor(uv);
+    vec2 f = fract(uv);
+    float minDist = 100.0;
+    vec2 minPoint = vec2(0.0);    
+    // iterate through this cell and the 8 surrounding cells
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            // neighbor place in the grid
+            vec2 neighbor = vec2(float(x), float(y));
+            vec2 point = randomVec2(i + neighbor, seed);
+            vec2 diff = neighbor + point - f;
+            float dist = length(diff);
+            if (dist < minDist) {
+                minDist = dist;
+                minPoint = point;
+            }
+        }
+    }    
+    return vec4(randomVec(vec3(minPoint, 0f), seed), minDist);    
+}
+
+/**
+ * Generates a cobblestone texture using the voronoi algorithm.
+ */
+float cobblestone(vec2 uv, float scale, float seed) {    
+    uv *= scale;    
+    // divide the space into a grid, with i being the cell index,
+    // and f being the location relative to the cell (or cell space)
+    vec2 i = floor(uv);
+    vec2 f = fract(uv);    
+    float minDist1 = 100.0;
+    float minDist2 = 100.0;    
+    // iterate through this cell and the 8 surrounding cells
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            // neighboring cell in the grid
+            vec2 neighbor = vec2(float(x), float(y));
+            vec2 point = randomVec2(i + neighbor, seed);
+            vec2 diff = neighbor + point - f;
+            float dist = length(diff);
+            if (dist < minDist1) {
+                minDist2 = minDist1;
+                minDist1 = dist;
+            }
+            else if (dist < minDist2) {
+                minDist2 = dist;
+            }
+        }
+    }    
+    return (1.0 - minDist1) + (1.0 - minDist2);    
+}

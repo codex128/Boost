@@ -6,19 +6,21 @@ package codex.boost.scene;
 
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 
 /**
- * Iterates through the scene graph starting with a particular spatial.
+ * Iterates through the scene graph by depth-first.
  *
  * @author gary
  */
 public class SceneGraphIterator implements Iterable<Spatial>, Iterator<Spatial> {
-
-    Spatial current;
-    LinkedList<PathNode> path = new LinkedList<>();
-    LinkedList<Spatial> detach = new LinkedList<>();
+    
+    private Spatial current;
+    private final LinkedList<PathNode> path = new LinkedList<>();
+    private final LinkedList<Spatial> detach = new LinkedList<>();
+    private Collection<Spatial> ignore;
 
     public SceneGraphIterator(Spatial main) {
         if (main instanceof Node) {
@@ -30,7 +32,6 @@ public class SceneGraphIterator implements Iterable<Spatial>, Iterator<Spatial> 
     public Iterator<Spatial> iterator() {
         return this;
     }
-
     @Override
     public boolean hasNext() {
         trim();
@@ -42,7 +43,6 @@ public class SceneGraphIterator implements Iterable<Spatial>, Iterator<Spatial> 
         }
         return next;
     }
-
     @Override
     public Spatial next() {
         current = path.getLast().node.getChild(path.getLast().childIndex++);
@@ -51,12 +51,11 @@ public class SceneGraphIterator implements Iterable<Spatial>, Iterator<Spatial> 
         }
         return current;
     }
-
     @Override
     public void remove() {
         detach.add(current);
     }
-
+    
     /**
      * Get the current spatial.
      *
@@ -65,7 +64,6 @@ public class SceneGraphIterator implements Iterable<Spatial>, Iterator<Spatial> 
     public Spatial current() {
         return current;
     }
-
     /**
      * Makes this iterator ignore all children of the current spatial. The children of the current spatial
      * will not be iterated through.
@@ -75,7 +73,6 @@ public class SceneGraphIterator implements Iterable<Spatial>, Iterator<Spatial> 
             path.removeLast();
         }
     }
-
     /**
      * Trims the path to the first available node.
      */
