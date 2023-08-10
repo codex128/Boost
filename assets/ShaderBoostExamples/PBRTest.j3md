@@ -1,0 +1,29 @@
+MaterialDef Simple {
+    MaterialParameters {
+        Texture2D DiffuseMap
+        Texture2D NormalMap
+        Color BaseColor : 1.0 1.0 1.0 1.0
+        Float Metallic : 0.5
+        Float Specular : 0.5
+        Float Roughness : 0.5
+        Float ParallaxHeight
+    }
+    Technique {
+        LightMode SinglePassAndImageBased
+        VertexShader GLSL150: ShaderBoostExamples/PBRTest.vert
+        FragmentShader GLSL150: ShaderBoostExamples/PBRTest.frag     
+        Defines {
+            DIFFUSE_MAP : DiffuseMap
+            NORMAL_MAP : NormalMap
+            PARALLAX : ParallaxHeight
+        }
+        WorldParameters {
+            WorldViewProjectionMatrix
+            CameraPosition
+            WorldMatrix
+            WorldNormalMatrix
+            ViewProjectionMatrix
+            ViewMatrix
+        }
+    }
+}
