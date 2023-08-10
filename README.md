@@ -8,6 +8,7 @@ Boost is a general purpose utility library for [JMonkeyEngine3](https://jmonkeye
 * OrbitalCamera (3rd person camera controller)
 * GeometryControl, NodeControl, and SubControl
 * SceneGraphIterator (depth-first traversal of the scene graph)
+* 💥 **New**: Shader Boosts (alpha)
 
 ## Dependencies
 * [JMonkeyEngine3](https://jmonkeyengine.org/) (or on [GitHub](https://github.com/jMonkeyEngine/jmonkeyengine))
