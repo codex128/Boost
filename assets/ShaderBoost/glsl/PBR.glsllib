@@ -3,7 +3,7 @@
 #import "Common/ShaderLib/PBR.glsllib"
 #import "Common/ShaderLib/Parallax.glsllib"
 #import "Common/ShaderLib/Lighting.glsllib"
-#import "ShaderBoost/utils.glsllib"
+#import "ShaderBoost/glsl/utils.glsllib"
 
 #if NB_PROBES >= 1
     uniform samplerCube g_PrefEnvMap;

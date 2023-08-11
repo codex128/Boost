@@ -1,0 +1,26 @@
+
+/* Material Parameters:
+Int NumberOfBones
+Matrix4Array BoneMatrices
+*/
+/* Defines:
+NB_BONES : NumberOfBones
+*/
+
+#import "Common/ShaderLib/Skinning.glsllib"
+
+void skinningDeform(vec4 modelSpacePos) {
+    #ifdef NB_BONES
+    Skinning_Compute(modelSpacePos);
+    #endif
+}
+void skinningDeform(vec4 modelSpacePos, vec3 modelSpaceNorm) {
+    #ifdef NB_BONES
+    Skinning_Compute(modelSpacePos, modelSpaceNorm);
+    #endif
+}
+void skinningDeform(vec4 modelSpacePos, vec3 modelSpaceNorm, vec3 modelSpaceTan) {
+    #ifdef NB_BONES
+    Skinning_Compute(modelSpacePos, modelSpaceNorm, modelSpaceTan);
+    #endif
+}

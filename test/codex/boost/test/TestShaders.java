@@ -10,11 +10,15 @@ import com.jme3.light.DirectionalLight;
 import com.jme3.light.PointLight;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.FastMath;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Spatial;
 import com.jme3.scene.shape.Box;
+import com.jme3.scene.shape.Quad;
+import com.jme3.shadow.PointLightShadowRenderer;
 import com.jme3.util.SkyFactory;
 import com.jme3.util.TangentBinormalGenerator;
 import jme3utilities.sky.SkyControl;
@@ -39,20 +43,36 @@ public class TestShaders extends SimpleApplication {
         assetManager.registerLocator(System.getProperty("user.home")+"/java/assets", FileLocator.class);        
         flyCam.setMoveSpeed(5f);
         
-        Geometry cube = new Geometry("test-cube", new Box(1f, 1f, 1f));
-        TangentBinormalGenerator.generate(cube);
         mat = new Material(assetManager, "ShaderBoostExamples/PBRTest.j3md");
         mat.setTexture("DiffuseMap", assetManager.loadTexture("BrickWall.jpg"));
         mat.setTexture("NormalMap", assetManager.loadTexture("BrickWall_normal.jpg"));
-        mat.setFloat("ParallaxHeight", 1f);
+        mat.setFloat("Roughness", 1f);
+        mat.setFloat("Metallic", 0f);
+        mat.setFloat("ParallaxHeight", 1f);        
+        
+        Geometry cube = new Geometry("test-cube", new Box(1f, 1f, 1f));
+        TangentBinormalGenerator.generate(cube);
         cube.setMaterial(mat);
+        cube.setShadowMode(RenderQueue.ShadowMode.Cast);
         rootNode.attachChild(cube);
         
+        Geometry floor = new Geometry("test-floor", new Quad(20f, 20f));
+        TangentBinormalGenerator.generate(floor);
+        floor.setLocalTranslation(-10f, -3f, 10f);
+        floor.setLocalRotation(new Quaternion().fromAngleAxis(-FastMath.HALF_PI, Vector3f.UNIT_X));
+        floor.setMaterial(mat);
+        floor.setShadowMode(RenderQueue.ShadowMode.Receive);
+        rootNode.attachChild(floor);
+        
         light = new DirectionalLight(new Vector3f(0f, 0f, 1f), ColorRGBA.Gray);
-        rootNode.addLight(light);
-        PointLight pl = new PointLight(new Vector3f(-2f, -2f, -2f), ColorRGBA.White);
+        //rootNode.addLight(light);
+        PointLight pl = new PointLight(new Vector3f(-2f, 2f, -2f), ColorRGBA.White);
         pl.setRadius(100f);
         rootNode.addLight(pl);
+        
+        PointLightShadowRenderer plsr = new PointLightShadowRenderer(assetManager, 4096);
+        plsr.setLight(pl);
+        viewPort.addProcessor(plsr);
         
         Spatial sky = SkyFactory.createSky(assetManager, "FullskiesSunset0068.dds", SkyFactory.EnvMapType.CubeMap);
         sky.setShadowMode(RenderQueue.ShadowMode.Off);

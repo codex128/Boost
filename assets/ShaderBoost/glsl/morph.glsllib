@@ -1,0 +1,28 @@
+
+/* Material Parameters:
+FloatArray MorphWeights
+Int NumberOfMorphTargets
+Int NumberOfTargetsBuffers
+*/
+/* Defines:
+NUM_MORPH_TARGETS   : NumberOfMorphTargets
+NUM_TARGETS_BUFFERS : NumberOfTargetsBuffers
+*/
+
+#import "Common/ShaderLib/MorphAnim.glsllib"
+
+void morphDeform(vec4 modelSpacePos) {
+    #ifdef NB_BONES
+    Morph_Compute(modelSpacePos);
+    #endif
+}
+void morphDeform(vec4 modelSpacePos, vec3 modelSpaceNorm) {
+    #ifdef NB_BONES
+    Morph_Compute(modelSpacePos, modelSpaceNorm);
+    #endif
+}
+void morphDeform(vec4 modelSpacePos, vec3 modelSpaceNorm, vec3 modelSpaceTan) {
+    #ifdef NB_BONES
+    Morph_Compute(modelSpacePos, modelSpaceNorm, modelSpaceTan);
+    #endif
+}

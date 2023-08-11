@@ -1,6 +1,6 @@
 
-#import "ShaderBoost/random.glsllib"
-#import "ShaderBoost/utils.glsllib"
+#import "ShaderBoost/glsl/random.glsllib"
+#import "ShaderBoost/glsl/utils.glsllib"
 
 /**
  * Creates a checker pattern.

@@ -1,8 +1,8 @@
 
-#import "ShaderBoost/PBR.glsllib"
-#import "ShaderBoost/utils.glsllib"
-#import "ShaderBoost/mapping.glsllib"
-#import "ShaderBoost/textures.glsllib"
+#import "ShaderBoost/glsl/PBR.glsllib"
+#import "ShaderBoost/glsl/utils.glsllib"
+#import "ShaderBoost/glsl/mapping.glsllib"
+#import "ShaderBoost/glsl/textures.glsllib"
 
 #ifdef DIFFUSE_MAP
     uniform sampler2D m_DiffuseMap;
