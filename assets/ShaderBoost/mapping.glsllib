@@ -4,7 +4,7 @@
 mat3 tbnMatrix(vec3 normal, vec4 tangent) {
     vec3 norm = normalize(normal);
     vec3 tan = normalize(tangent.xyz);
-    return mat3(tan, tangent.w * cross(norm, tan), norm);
+    return mat3(tan, tangent.w * cross( (norm), (tan)), norm);
 }
 
 /**
@@ -36,11 +36,18 @@ vec2 classicParallax(float data, vec3 viewDir, vec2 texCoord, vec3 normal, vec4 
  * normColor = input color from the normal map
  * type = type of normal map (1=OpenGL, -1=DirectX)
  */
+vec3 normalMap(mat3 tbnMat, vec4 normColor, float type) {
+    vec3 norm = normalize(normColor.xyz * vec3(2.0, type * 2.0, 2.0) - vec3(1.0, type * 1.0, 1.0));
+    return normalize(tbnMat * norm);
+}
+vec3 normalMap(mat3 tbnMat, vec4 normColor) {
+    return normalMap(tbnMat, normColor, -1.0);
+}
 vec3 normalMap(vec3 normal, vec4 tangent, vec4 normColor, float type) {
-    return normalize(tbnMatrix(normal, tangent) * normalize(normColor.xyz * vec3(2.0, type * 2.0, 2.0) - vec3(1.0, type * 1.0, 1.0)));
+    return normalMap(tbnMatrix(normal, tangent), normColor, type);
 }
 vec3 normalMap(vec3 normal, vec4 tangent, vec4 normColor) {
-    return normalMap(normal, tangent, normColor, -1.0);
+    return normalMap(tbnMatrix(normal, tangent), normColor, -1.0);
 }
 
 

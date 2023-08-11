@@ -16,6 +16,7 @@ import com.jme3.scene.Geometry;
 import com.jme3.scene.Spatial;
 import com.jme3.scene.shape.Box;
 import com.jme3.util.SkyFactory;
+import com.jme3.util.TangentBinormalGenerator;
 import jme3utilities.sky.SkyControl;
 import jme3utilities.sky.StarsOption;
 
@@ -39,9 +40,11 @@ public class TestShaders extends SimpleApplication {
         flyCam.setMoveSpeed(5f);
         
         Geometry cube = new Geometry("test-cube", new Box(1f, 1f, 1f));
+        TangentBinormalGenerator.generate(cube);
         mat = new Material(assetManager, "ShaderBoostExamples/PBRTest.j3md");
         mat.setTexture("DiffuseMap", assetManager.loadTexture("BrickWall.jpg"));
         mat.setTexture("NormalMap", assetManager.loadTexture("BrickWall_normal.jpg"));
+        mat.setFloat("ParallaxHeight", 1f);
         cube.setMaterial(mat);
         rootNode.attachChild(cube);
         

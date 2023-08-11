@@ -10,8 +10,8 @@ MaterialDef Simple {
     }
     Technique {
         LightMode SinglePassAndImageBased
-        VertexShader GLSL150: ShaderBoostExamples/PBRTest.vert
-        FragmentShader GLSL150: ShaderBoostExamples/PBRTest.frag     
+        VertexShader GLSL120: ShaderBoostExamples/PBRTest.vert
+        FragmentShader GLSL120: ShaderBoostExamples/PBRTest.frag     
         Defines {
             DIFFUSE_MAP : DiffuseMap
             NORMAL_MAP : NormalMap
@@ -24,6 +24,9 @@ MaterialDef Simple {
             WorldNormalMatrix
             ViewProjectionMatrix
             ViewMatrix
+        }
+        RenderState {
+            FaceCull Off
         }
     }
 }

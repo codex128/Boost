@@ -17,12 +17,11 @@ void main() {
     vec3 modelSpaceNorm = inNormal;
     vec3 modelSpaceTan = inTangent.xyz;
     
-    gl_Position = TransformWorldViewProjection(modelSpacePos);
-    
     wPosition = TransformWorld(modelSpacePos).xyz;
     wNormal = TransformWorldNormal(modelSpaceNorm);
-    wTangent = vec4(TransformWorldNormal(modelSpaceTan), inTangent.w);
-    
+    wTangent = vec4(TransformWorldNormal(inTangent.xyz), inTangent.w);
     texCoord = inTexCoord;
+    
+    gl_Position = TransformWorldViewProjection(modelSpacePos);
     
 }
