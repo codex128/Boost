@@ -23,6 +23,7 @@
 
 uniform vec4 g_LightData[NB_LIGHTS];
 uniform vec4 g_AmbientLightColor;
+const float pi = 3.14159265359;
 
 /**
  * Applies physically based rendering for shading.
@@ -62,6 +63,11 @@ vec4 physicallyBasedRender(vec3 position,
         vec4 lightDir = vec4(0.0);
         vec3 lightVec = vec3(0.0);
         lightComputeDir(position, lightColor.w, lightData1, lightDir, lightVec);
+        // addition by codex, skip this light if the true normal is facing away from the light
+        float angle = acos(dot(trueNormal, lightDir.xyz));
+        if (angle > pi * 0.5) {
+            continue;
+        }
         float fallOff = 1.0;
         #if __VERSION__ >= 110
             // allow use of control flow

@@ -18,6 +18,7 @@ uniform vec4 m_BaseColor;
 uniform float m_Metallic;
 uniform float m_Specular;
 uniform float m_Roughness;
+uniform float g_Time;
 
 varying vec2 texCoord;
 varying vec3 wPosition;
@@ -47,13 +48,17 @@ void main() {
         vec3 normal = normalMap(wNormal, wTangent, texture2D(m_NormalMap, newTexCoord));
     #else
         vec3 normal = wNormal;
-    #endif    
+    #endif
     
-    float checker = checkerTexture(newTexCoord, 5.0);
-    //if (checker > 0.5) discard;
+    float diff = dot(abs(normal - wNormal), wNormal);
+    
+    float checker = checkerTexture(newTexCoord + vec2(g_Time * 0.1), 5.0 + diff * 0.01);
+    if (checker > 0.5) {
+        diffuse = mix(diffuse, vec4(1.0, 0.0, 0.0, 1.0), 0.8);
+    }
     
     // PBR
-    vec4 color = physicallyBasedRender(wPosition, texture2D(m_DiffuseMap, texCoord), m_Metallic, vec4(m_Specular), m_Roughness, normal, wNormal);
+    vec4 color = physicallyBasedRender(wPosition, diffuse, m_Metallic, vec4(m_Specular), m_Roughness, normal, wNormal);
     
     // fragment output
     gl_FragColor = color;

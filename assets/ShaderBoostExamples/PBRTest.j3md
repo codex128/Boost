@@ -58,6 +58,7 @@ MaterialDef Simple {
             WorldNormalMatrix
             ViewProjectionMatrix
             ViewMatrix
+            Time
         }
     }
     Technique PostShadow {

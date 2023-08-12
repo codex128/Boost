@@ -4,15 +4,24 @@
  */
 package codex.boost.test;
 
+import com.jme3.app.Application;
 import com.jme3.app.SimpleApplication;
+import com.jme3.app.state.AppState;
+import com.jme3.app.state.AppStateManager;
 import com.jme3.asset.plugins.FileLocator;
+import com.jme3.environment.EnvironmentCamera;
+import com.jme3.environment.LightProbeFactory;
+import com.jme3.environment.generation.JobProgressAdapter;
+import com.jme3.light.AmbientLight;
 import com.jme3.light.DirectionalLight;
+import com.jme3.light.LightProbe;
 import com.jme3.light.PointLight;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
+import com.jme3.renderer.RenderManager;
 import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Spatial;
@@ -28,10 +37,13 @@ import jme3utilities.sky.StarsOption;
  *
  * @author codex
  */
-public class TestShaders extends SimpleApplication {
+public class TestShaders extends SimpleApplication implements AppState {
 
     Material mat;
     DirectionalLight light;
+    boolean enabled = true;
+    boolean initialized = false;
+    String id = "TestShader#AppState";
     
     public static void main(String[] args) {
         new TestShaders().start();
@@ -43,12 +55,26 @@ public class TestShaders extends SimpleApplication {
         assetManager.registerLocator(System.getProperty("user.home")+"/java/assets", FileLocator.class);        
         flyCam.setMoveSpeed(5f);
         
+        EnvironmentCamera camera = new EnvironmentCamera();
+        camera.setPosition(new Vector3f(3f, 3f, 3f));
+        stateManager.attach(camera);
+        
+        stateManager.attach(this);
+        
+    }
+    @Override
+    public void simpleUpdate(float tpf) {
+    }
+
+    @Override
+    public void initialize(AppStateManager stateManager, Application app) {
+    
         mat = new Material(assetManager, "ShaderBoostExamples/PBRTest.j3md");
         mat.setTexture("DiffuseMap", assetManager.loadTexture("BrickWall.jpg"));
         mat.setTexture("NormalMap", assetManager.loadTexture("BrickWall_normal.jpg"));
         mat.setFloat("Roughness", 1f);
         mat.setFloat("Metallic", 0f);
-        mat.setFloat("ParallaxHeight", 1f);        
+        //mat.setFloat("ParallaxHeight", 1f);
         
         Geometry cube = new Geometry("test-cube", new Box(1f, 1f, 1f));
         TangentBinormalGenerator.generate(cube);
@@ -65,7 +91,7 @@ public class TestShaders extends SimpleApplication {
         rootNode.attachChild(floor);
         
         light = new DirectionalLight(new Vector3f(0f, 0f, 1f), ColorRGBA.Gray);
-        //rootNode.addLight(light);
+        rootNode.addLight(light);
         PointLight pl = new PointLight(new Vector3f(-2f, 2f, -2f), ColorRGBA.White);
         pl.setRadius(100f);
         rootNode.addLight(pl);
@@ -83,12 +109,52 @@ public class TestShaders extends SimpleApplication {
         skyControl.setCloudsYOffset(0.4f);
         skyControl.setTopVerticalAngle(1.78f);
         skyControl.getSunAndStars().setHour(10);
-        skyControl.setEnabled(true);
+        skyControl.setEnabled(true);        
         
+        AmbientLight gi = new AmbientLight(ColorRGBA.DarkGray);
+        rootNode.addLight(gi);
+        
+        EnvironmentCamera envCam = stateManager.getState(EnvironmentCamera.class, true);
+        envCam.setBackGroundColor(ColorRGBA.White);
+        LightProbeFactory.makeProbe(envCam, rootNode, new JobProgressAdapter<LightProbe>() {
+            @Override
+            public void done(LightProbe result) {
+                System.out.println("finished making probe");
+                result.getArea().setRadius(100f);
+                rootNode.addLight(result);
+            }
+        });
+    
     }
     @Override
-    public void simpleUpdate(float tpf) {
+    public boolean isInitialized() {
+        return initialized;
+    }
+    @Override
+    public String getId() {
+        return id;
+    }
+    @Override
+    public void setEnabled(boolean active) {
+        enabled = active;
+    }
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+    @Override
+    public void stateAttached(AppStateManager stateManager) {}
+    @Override
+    public void stateDetached(AppStateManager stateManager) {}
+    @Override
+    public void update(float tpf) {
         light.setDirection(cam.getDirection());
     }
+    @Override
+    public void render(RenderManager rm) {}
+    @Override
+    public void postRender() {}
+    @Override
+    public void cleanup() {}
     
 }
