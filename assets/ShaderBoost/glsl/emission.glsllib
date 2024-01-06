@@ -1,0 +1,4 @@
+
+vec4 emission(vec4 color, float power, float intensity) {
+    return color * (color.a > 0.0 ? pow(color.a, power) : 0.0) * intensity;
+}

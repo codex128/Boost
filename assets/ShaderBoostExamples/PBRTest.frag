@@ -3,6 +3,7 @@
 #import "ShaderBoost/glsl/utils.glsllib"
 #import "ShaderBoost/glsl/mapping.glsllib"
 #import "ShaderBoost/glsl/textures.glsllib"
+#import "ShaderBoost/glsl/emission.glsllib"
 
 #ifdef DIFFUSE_MAP
     uniform sampler2D m_DiffuseMap;
@@ -50,15 +51,19 @@ void main() {
         vec3 normal = wNormal;
     #endif
     
-    float diff = dot(abs(normal - wNormal), wNormal);
+    float metallic = m_Metallic;
+    float roughness = m_Roughness;
     
+    float diff = dot(abs(normal - wNormal), wNormal);    
     float checker = checkerTexture(newTexCoord + vec2(g_Time * 0.1), 5.0 + diff * 0.01);
     if (checker > 0.5) {
         diffuse = mix(diffuse, vec4(1.0, 0.0, 0.0, 1.0), 0.8);
+        metallic = .7f;
+        roughness = .3f;
     }
     
     // PBR
-    vec4 color = physicallyBasedRender(wPosition, diffuse, m_Metallic, vec4(m_Specular), m_Roughness, normal, wNormal);
+    vec4 color = physicallyBasedRender(wPosition, diffuse, metallic, vec4(m_Specular), roughness, normal, wNormal);
     
     // fragment output
     gl_FragColor = color;

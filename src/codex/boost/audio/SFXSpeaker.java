@@ -99,7 +99,9 @@ public class SFXSpeaker extends Node implements AudioSource, Listenable<SpeakerL
     }
 
     /**
-     * Manually updates this speaker. Is used to track audio status and notify listeners on change. Does not
+     * Manually updates this speaker.
+     * <p>
+     * Is used to track audio status and notify listeners on change. Does not
      * need to be called if this speaker is attached to the scene graph.
      *
      * @param tpf

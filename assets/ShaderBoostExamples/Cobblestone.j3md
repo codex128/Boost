@@ -1,0 +1,21 @@
+MaterialDef Cobblestone {
+    MaterialParameters {
+        
+    }
+    Technique {
+        LightMode SinglePassAndImageBased
+        VertexShader GLSL120:   ShaderBoostExamples/Cobblestone.vert
+        FragmentShader GLSL120: ShaderBoostExamples/Cobblestone.frag
+        Defines {
+            
+        }
+        WorldParameters {
+            WorldViewProjectionMatrix
+            CameraPosition
+            WorldMatrix
+            WorldNormalMatrix
+            ViewProjectionMatrix
+            ViewMatrix
+        }
+    }
+}

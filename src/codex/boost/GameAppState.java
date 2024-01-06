@@ -6,6 +6,7 @@ package codex.boost;
 
 import com.jme3.app.Application;
 import com.jme3.app.SimpleApplication;
+import com.jme3.app.state.AppState;
 import com.jme3.app.state.BaseAppState;
 import com.jme3.asset.AssetManager;
 import com.jme3.input.InputManager;
@@ -16,6 +17,7 @@ import com.jme3.scene.Node;
 import com.jme3.system.AppSettings;
 import com.simsilica.lemur.GuiGlobals;
 import com.simsilica.lemur.input.InputMapper;
+import java.util.function.Consumer;
 
 /**
  * Extension of {@link BaseAppState} that provides easier
@@ -54,5 +56,13 @@ public abstract class GameAppState extends BaseAppState {
         init(app);
     }    
     protected abstract void init(Application app);
+    
+    protected <T extends AppState> T getState(Class<T> type, Consumer<T> event) {
+        T state = getState(type);
+        if (state != null) {
+            event.accept(state);
+        }
+        return state;
+    }
     
 }

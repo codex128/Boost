@@ -9,30 +9,30 @@ import com.jme3.scene.Spatial;
 import com.jme3.scene.control.AbstractControl;
 
 /**
- * Controls geometry.
  *
- * @author gary
+ * @author codex
+ * @param <T>
  */
-public abstract class GeometryControl extends AbstractControl {
-
-    protected Geometry geometry;
+public abstract class TypeControl <T extends Spatial> extends AbstractControl {
+    
+    protected T tSpatial;
 
     @Override
     public void setSpatial(Spatial spat) {
         super.setSpatial(spat);
         if (spatial == null) {
-            geometry = null;
+            tSpatial = null;
         }
         else if (spatial instanceof Geometry) {
-            geometry = (Geometry)spatial;
+            tSpatial = (T)spatial;
         }
         else {
-            throw new IllegalArgumentException("Control can only control geometry!");
+            throw new IllegalArgumentException("This control cannot control given type!");
         }
     }
-
-    public Geometry getGeometry() {
-        return geometry;
+    @Override
+    public T getSpatial() {
+        return tSpatial;
     }
-
+    
 }

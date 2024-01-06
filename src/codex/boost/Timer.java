@@ -37,7 +37,7 @@ public class Timer implements Listenable<TimerListener> {
     int cycleMax = 5;
 
     public Timer(float duration) {
-        setDuration(duration);
+        this.duration = duration;
     }
 
     public void update() {

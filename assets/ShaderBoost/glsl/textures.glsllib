@@ -61,14 +61,15 @@ vec4 voronoiTexture(vec2 uv, float scale, float seed) {
 /**
  * Generates a cobblestone texture using the voronoi algorithm.
  */
-float cobblestoneTexture(vec2 uv, float scale, float seed) {    
+vec3 cobblestoneTexture(vec2 uv, float scale, float seed) {    
     uv *= scale;    
     // divide the space into a grid, with i being the cell index,
     // and f being the location relative to the cell (or cell space)
     vec2 i = floor(uv);
     vec2 f = fract(uv);    
     float minDist1 = 100.0;
-    float minDist2 = 100.0;    
+    float minDist2 = 100.0;
+    vec2 closest = vec2(0.0);
     // iterate through this cell and the 8 surrounding cells
     for (int y = -1; y <= 1; y++) {
         for (int x = -1; x <= 1; x++) {
@@ -80,11 +81,12 @@ float cobblestoneTexture(vec2 uv, float scale, float seed) {
             if (dist < minDist1) {
                 minDist2 = minDist1;
                 minDist1 = dist;
+                closest = point;
             }
             else if (dist < minDist2) {
                 minDist2 = dist;
             }
         }
     }    
-    return (1.0 - minDist1) + (1.0 - minDist2);    
+    return vec3(1.0 - (1.0 - minDist1) + (1.0 - minDist2), closest.xy);
 }

@@ -6,7 +6,6 @@ mat3 tbnMatrix(vec3 normal, vec4 tangent) {
     vec3 tan = normalize(tangent.xyz);
     return mat3(tan, tangent.w * cross( (norm), (tan)), norm);
 }
-
 /**
  * Calculates a new texture coordinate based on normal/parallax map that will generate a parallax effect for textures.
  * @param map      = texture to calculate from
@@ -20,13 +19,11 @@ mat3 tbnMatrix(vec3 normal, vec4 tangent) {
  */
 vec2 steepParallax(sampler2D map, vec3 viewDir, vec2 texCoord, vec3 normal, vec4 tangent, float height, bool embedded) {
     mat3 tbnMat = tbnMatrix(normal, tangent);
-    vec3 vViewDir =  viewDir * tbnMat;
-    return steepParallaxOffset(map, vViewDir, texCoord, height, embedded);
+    return steepParallaxOffset(map, viewDir * tbnMat, texCoord, height, embedded);
 }
 vec2 classicParallax(float data, vec3 viewDir, vec2 texCoord, vec3 normal, vec4 tangent, float height) {
     mat3 tbnMat = tbnMatrix(normal, tangent);
-    vec3 vViewDir =  viewDir * tbnMat;
-    return classicParallaxOffset(data, vViewDir, texCoord, height);
+    return classicParallaxOffset(data, viewDir * tbnMat, texCoord, height);
 }
 
 /**

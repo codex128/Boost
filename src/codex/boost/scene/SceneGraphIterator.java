@@ -6,7 +6,6 @@ package codex.boost.scene;
 
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -18,14 +17,15 @@ import java.util.LinkedList;
 public class SceneGraphIterator implements Iterable<Spatial>, Iterator<Spatial> {
     
     private Spatial current;
+    private Spatial main;
+    private int depth = 0;
     private final LinkedList<PathNode> path = new LinkedList<>();
-    private final LinkedList<Spatial> detach = new LinkedList<>();
-    private Collection<Spatial> ignore;
 
     public SceneGraphIterator(Spatial main) {
         if (main instanceof Node) {
             path.add(new PathNode((Node)main));
         }
+        this.main = main;
     }
 
     @Override
@@ -34,26 +34,23 @@ public class SceneGraphIterator implements Iterable<Spatial>, Iterator<Spatial> 
     }
     @Override
     public boolean hasNext() {
+        if (main != null) return true;
         trim();
-        boolean next = !path.isEmpty();
-        if (!next) {
-            for (Spatial s : detach) {
-                s.removeFromParent();
-            }
-        }
-        return next;
+        return !path.isEmpty();
     }
     @Override
     public Spatial next() {
-        current = path.getLast().node.getChild(path.getLast().childIndex++);
-        if (current instanceof Node) {
-            path.addLast(new PathNode((Node)current));
+        if (main != null) {
+            current = main;
+            main = null;
+        }
+        else {
+            current = path.getLast().iterator.next();
+            if (current instanceof Node) {
+                path.addLast(new PathNode((Node)current));
+            }
         }
         return current;
-    }
-    @Override
-    public void remove() {
-        detach.add(current);
     }
     
     /**
@@ -64,33 +61,45 @@ public class SceneGraphIterator implements Iterable<Spatial>, Iterator<Spatial> 
     public Spatial current() {
         return current;
     }
+    
     /**
-     * Makes this iterator ignore all children of the current spatial. The children of the current spatial
-     * will not be iterated through.
+     * Makes this iterator ignore all children of the current spatial.
+     * The children of the current spatial will not be iterated through.
      */
     public void ignoreChildren() {
         if (current instanceof Node) {
             path.removeLast();
         }
     }
+    
+    /**
+     * Get the current depth of the iterator.
+     * @return 
+     */
+    public int getDepth() {
+        return main != null ? 0 : path.size()-1;
+    }
+    
     /**
      * Trims the path to the first available node.
      */
     private void trim() {
-        if (!path.isEmpty() && path.getLast().childIndex >= path.getLast().node.getQuantity()) {
+        if (!path.isEmpty() && !path.getLast().iterator.hasNext()) {
             path.removeLast();
             trim();
         }
     }
-
+    
     private static class PathNode {
 
         Node node;
-        int childIndex = 0;
+        Iterator<Spatial> iterator;
 
         PathNode(Node node) {
             this.node = node;
+            iterator = this.node.getChildren().iterator();
         }
+        
     }
 
 }

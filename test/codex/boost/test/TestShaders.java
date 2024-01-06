@@ -69,12 +69,7 @@ public class TestShaders extends SimpleApplication implements AppState {
     @Override
     public void initialize(AppStateManager stateManager, Application app) {
     
-        mat = new Material(assetManager, "ShaderBoostExamples/PBRTest.j3md");
-        mat.setTexture("DiffuseMap", assetManager.loadTexture("BrickWall.jpg"));
-        mat.setTexture("NormalMap", assetManager.loadTexture("BrickWall_normal.jpg"));
-        mat.setFloat("Roughness", 1f);
-        mat.setFloat("Metallic", 0f);
-        //mat.setFloat("ParallaxHeight", 1f);
+        mat = new Material(assetManager, "ShaderBoostExamples/Cobblestone.j3md");
         
         Geometry cube = new Geometry("test-cube", new Box(1f, 1f, 1f));
         TangentBinormalGenerator.generate(cube);
