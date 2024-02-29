@@ -4,19 +4,37 @@
  */
 package codex.esboost.components;
 
+import codex.esboost.factories.Prefab;
 import com.simsilica.es.EntityComponent;
 
 /**
- * Indicates that this entity represents a scene which
- * can be split down into other entities.
- * <p>
- * This should not be confused with {@link SceneId}, which indicates
- * a scene/group an entity is part of.
- * 
+ *
  * @author codex
  */
 public class Scene implements EntityComponent {
     
-    public static final Scene IMPL = new Scene();
+    private final Prefab prefab;
+    private final boolean update;
+    
+    public Scene() {
+        this(Prefab.getDefault(), true);
+    }
+    public Scene(Prefab prefab) {
+        this(prefab, true);
+    }
+    public Scene(boolean update) {
+        this(Prefab.getDefault(), update);
+    }
+    public Scene(Prefab prefab, boolean update) {
+        this.prefab = prefab;
+        this.update = update;
+    }
+
+    public Prefab getPrefab() {
+        return prefab;
+    }
+    public boolean isUpdate() {
+        return update;
+    }
     
 }

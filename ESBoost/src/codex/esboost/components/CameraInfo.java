@@ -4,28 +4,28 @@
  */
 package codex.esboost.components;
 
+import codex.esboost.factories.Prefab;
 import com.simsilica.es.EntityComponent;
 
 /**
- * Holds a file path to a light probe asset.
- * 
+ *
  * @author codex
  */
-public class ProbeSource implements EntityComponent {
+public class CameraInfo implements EntityComponent {
     
-    private final String path;
+    private final Prefab prefab;
 
-    public ProbeSource(String path) {
-        this.path = path;
+    public CameraInfo(Prefab prefab) {
+        this.prefab = prefab;
     }
 
-    public String getPath() {
-        return path;
+    public Prefab getPrefab() {
+        return prefab;
     }
 
     @Override
     public String toString() {
-        return "ProbeSource{" + "path=" + path + '}';
+        return "CameraInfo{" + "prefab=" + prefab + '}';
     }
     
 }

@@ -4,34 +4,52 @@
  */
 package codex.esboost.factories;
 
+import codex.esboost.components.Parent;
 import codex.esboost.components.Position;
 import codex.esboost.components.Rotation;
+import codex.esboost.components.SceneMember;
+import com.jme3.math.Vector3f;
 import com.jme3.scene.Spatial;
-import com.simsilica.es.EntityData;
 import com.simsilica.es.EntityId;
-import com.simsilica.sim.SimTime;
 
 /**
  *
  * @author codex
  */
-public interface Design extends Assembler<Design> {
+public interface Design {
     
-    public EntityId create();    
-    public EntityId create(EntityId customer);
-    public EntityId create(Spatial customer);
+    public void create();    
+    public void create(EntityId customer);
+    public void create(Spatial customer);
     
-    public void setEntityData(EntityData ed);
-    public void setTime(SimTime time);    
-    public EntityData getEntityData();    
-    public SimTime getTime();
+    public void setDesignTools(DesignTools tools);
+    
+    public DesignTools getDesignTools();
     public EntityId getMainEntity();
     
     public default void setPosition(Position position) {
-        getEntityData().setComponent(getMainEntity(), position);
+        getDesignTools().ed.setComponent(getMainEntity(), position);
+    }
+    public default void setPosition(Vector3f position) {
+        setPosition(new Position(position));
+    }
+    public default void setPosition(float x, float y, float z) {
+        setPosition(new Position(x, y, z));
     }
     public default void setRotation(Rotation rotation) {
-        getEntityData().setComponent(getMainEntity(), rotation);
+        getDesignTools().ed.setComponent(getMainEntity(), rotation);
+    }
+    public default void setParent(Parent parent) {
+        getDesignTools().ed.setComponent(getMainEntity(), parent);
+    }
+    public default void setParent(EntityId parent) {
+        setParent(new Parent(parent));
+    }
+    public default void setScene(SceneMember scene) {
+        getDesignTools().ed.setComponent(getMainEntity(), scene);
+    }
+    public default void setScene(EntityId scene) {
+        setScene(new SceneMember(scene));
     }
     
 }

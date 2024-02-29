@@ -5,8 +5,9 @@
 package codex.esboost.components;
 
 import codex.esboost.bullet.GeometricShape;
-import codex.esboost.factories.Prefab;
 import com.simsilica.es.EntityComponent;
+import vhacd.VHACDParameters;
+import vhacd4.Vhacd4Parameters;
 
 /**
  *
@@ -14,29 +15,37 @@ import com.simsilica.es.EntityComponent;
  */
 public class GeometricShapeInfo implements EntityComponent {
     
-    private final Prefab prefab;
     private final String type;
-
-    public GeometricShapeInfo(Prefab prefab, String type) {
-        this.prefab = prefab;
-        this.type = type;
+    private final VHACDParameters vhacd;
+    private final Vhacd4Parameters vhacd4;
+    
+    public GeometricShapeInfo(GeometricShape shape) {
+        this(shape.name(), null, null);
     }
-    public GeometricShapeInfo(Prefab prefab, GeometricShape shape) {
-        this(prefab, shape.name());
+    public GeometricShapeInfo(GeometricShape shape, VHACDParameters vhacd) {
+        this(shape.name(), vhacd, null);
+    }
+    public GeometricShapeInfo(GeometricShape shape, Vhacd4Parameters vhacd4) {
+        this(shape.name(), null, vhacd4);
+    }
+    private GeometricShapeInfo(String type, VHACDParameters vhacd, Vhacd4Parameters vhacd4) {
+        this.type = type;
+        this.vhacd = vhacd;
+        this.vhacd4 = vhacd4;
     }
     
-    public Prefab getPrefab() {
-        return prefab;
-    }
     public String getType() {
         return type;
     }
-
+    public VHACDParameters getVhacd() {
+        return vhacd;
+    }
+    public Vhacd4Parameters getVhacd4() {
+        return vhacd4;
+    }
     @Override
     public String toString() {
         return "GeometricShapeInfo{" + "type=" + type + '}';
     }
-    
-    
     
 }

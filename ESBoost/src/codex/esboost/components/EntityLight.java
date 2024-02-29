@@ -4,6 +4,7 @@
  */
 package codex.esboost.components;
 
+import codex.esboost.FunctionFilter;
 import com.jme3.math.ColorRGBA;
 import com.simsilica.es.EntityComponent;
 
@@ -13,7 +14,13 @@ import com.simsilica.es.EntityComponent;
  */
 public class EntityLight implements EntityComponent {
     
-    public static final int DIRECTIONAL = 0, POINT = 1, SPOT = 2, AMBIENT = 3, PROBE = 4;
+    public static final int
+            DIRECTIONAL = 0,
+            POINT = 1,
+            SPOT = 2,
+            AMBIENT = 3,
+            PREBUILT_PROBE = 4,
+            RUNTIME_PROBE = 5;
     
     private final int type;
     private final ColorRGBA color;
@@ -38,14 +45,27 @@ public class EntityLight implements EntityComponent {
         return "EntityLight{" + "type=" + type + '}';
     }
     
+    public static FunctionFilter<EntityLight> filter(int type) {
+        return new FunctionFilter<>(EntityLight.class, c -> c.type == type);
+    }
+    public static FunctionFilter<EntityLight> filter(int... types) {
+        return new FunctionFilter<>(EntityLight.class, c -> {
+            for (int t : types) if (t == c.type) {
+                return true;
+            }
+            return false;
+        });
+    }
     public static int valueOf(String lightType) {
         switch (lightType.toLowerCase()) {
-            case "directional": return DIRECTIONAL;
-            case "point":       return POINT;
-            case "spot":        return SPOT;
-            case "ambient":     return AMBIENT;
-            case "probe":       return PROBE;
-            default:            return AMBIENT;
+            case "directional":     return DIRECTIONAL;
+            case "point":           return POINT;
+            case "spot":            return SPOT;
+            case "ambient":         return AMBIENT;
+            case "probe": // to keep compatibility
+            case "prebuilt-probe":  return PREBUILT_PROBE;
+            case "runtime-probe":   return RUNTIME_PROBE;
+            default:                return AMBIENT;
         }
     }
     

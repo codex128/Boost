@@ -9,29 +9,23 @@ import com.simsilica.es.EntityComponent;
 import com.simsilica.es.EntityData;
 
 /**
- *
+ * Holds a file path to a light probe asset.
+ * 
  * @author codex
  */
-public class ModelInfo implements EntityComponent {
+public class ProbeInfo implements EntityComponent {
     
     private final Prefab prefab;
 
-    public ModelInfo(Prefab prefab) {
+    public ProbeInfo(Prefab prefab) {
         this.prefab = prefab;
     }
-    
+
     public Prefab getPrefab() {
         return prefab;
     }
-    public int getId() {
-        return prefab.getId();
-    }
     public String getName(EntityData ed) {
         return prefab.getName(ed);
-    }
-    
-    public static ModelInfo create(String name, EntityData ed) {
-        return new ModelInfo(Prefab.create(name, ed));
     }
     
 }

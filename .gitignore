@@ -10,3 +10,7 @@
 *.xcf
 *.blend1
 /ESBoost/nbproject/private/
+/ESBoost/build/
+/ShaderLab/nbproject/private/
+/ShaderRuntime/nbproject/private/
+/ESBoost/dist/

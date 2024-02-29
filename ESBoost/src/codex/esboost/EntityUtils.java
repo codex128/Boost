@@ -4,10 +4,8 @@
  */
 package codex.esboost;
 
-import codex.esboost.bullet.GeometricShape;
 import codex.esboost.components.*;
-import com.jme3.bullet.collision.shapes.CollisionShape;
-import com.jme3.bullet.util.CollisionShapeFactory;
+import com.jme3.app.Application;
 import com.jme3.math.Ray;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
@@ -17,6 +15,7 @@ import com.simsilica.es.EntityData;
 import com.simsilica.es.EntityId;
 import com.simsilica.es.common.Decay;
 import com.simsilica.sim.SimTime;
+import com.simsilica.state.GameSystemsState;
 import java.util.function.Consumer;
 
 /**
@@ -24,7 +23,9 @@ import java.util.function.Consumer;
  * 
  * @author codex
  */
-public class GameUtils {    
+public class EntityUtils {    
+    
+    public static final String ENTITYID_USERDATA = EntityId.class.getName();
     
     private static void fetchWorldTransform(EntityData ed, EntityId id, Transform store, Vector3f tempVec) {
         Parent parent = ed.getComponent(id, Parent.class);
@@ -48,6 +49,26 @@ public class GameUtils {
     
     /**
      * Calculates the world transform of the entity.
+     * <p>
+     * This method does not check for a {@link WorldTransform} component.
+     * 
+     * @param ed entity data
+     * @param id entity id
+     * @param store stores result
+     * @return 
+     */
+    public static Transform fetchWorldTransform(EntityData ed, EntityId id, Transform store) {
+        if (store == null) {
+            store = new Transform();
+        } else {
+            store.set(Transform.IDENTITY);
+        }
+        fetchWorldTransform(ed, id, store, new Vector3f());
+        return store;
+    }
+    
+    /**
+     * Gets the world transform of the entity.
      * 
      * @param ed entity data
      * @param id id of the entity
@@ -58,8 +79,7 @@ public class GameUtils {
     }
     
     /**
-     * Calculates the world transform of an entity and stores it in
-     * the transform instance.
+     * Gets the world transform of an entity and stores it in the transform instance.
      * 
      * @param ed entity data
      * @param id id of the entity
@@ -72,12 +92,16 @@ public class GameUtils {
         } else {
             store.set(Transform.IDENTITY);
         }
+        WorldTransform wt = ed.getComponent(id, WorldTransform.class);
+        if (wt != null) {
+            return wt.toTransform(store);
+        }
         fetchWorldTransform(ed, id, store, new Vector3f());
         return store;
     }
     
     /**
-     * Calculates the world transform of an entity's parent.
+     * Gets the world transform of an entity's parent.
      * 
      * @param ed entity data
      * @param id id of the entity
@@ -88,7 +112,7 @@ public class GameUtils {
     }
     
     /**
-     * Calculates the world transform of an entity's parent and stores it
+     * Gets the world transform of an entity's parent and stores it
      * in the transform instance.
      * 
      * @param ed entity data
@@ -108,15 +132,15 @@ public class GameUtils {
     }
     
     /**
-     * Fetches the component from the entity or parent entities.
+     * Gets the component from the entity or parent entities.
      * 
-     * @param <T>
-     * @param ed
-     * @param id
-     * @param type
+     * @param <T> component class type
+     * @param ed entity data
+     * @param id starting entity
+     * @param type component class
      * @return 
      */
-    public static <T extends EntityComponent> T getComponent(EntityData ed, EntityId id, Class<T> type) {
+    public static <T extends EntityComponent> T getComponentInHierarchy(EntityData ed, EntityId id, Class<T> type) {
         while (id != null) {
             T component = ed.getComponent(id, type);
             if (component != null) {
@@ -151,30 +175,6 @@ public class GameUtils {
     }
     
     /**
-     * Creates a collision shape based on the spatial shape.
-     * 
-     * @param shape shape generation method
-     * @param spatial spatial to calculate from
-     * @return physical collision shape
-     */
-    public static CollisionShape createGeometricCollisionShape(GeometricShape shape, Spatial spatial) {
-        switch (shape) {
-            case Box: return CollisionShapeFactory.createBoxShape(spatial);
-            case DynamicMesh: return CollisionShapeFactory.createDynamicMeshShape(spatial);
-            case GImpact: return CollisionShapeFactory.createGImpactShape(spatial);
-            case MergedBox: return CollisionShapeFactory.createMergedBoxShape(spatial);
-            case MergedHull: return CollisionShapeFactory.createMergedHullShape(spatial);
-            case MergedMesh: return CollisionShapeFactory.createMergedMeshShape(spatial);
-            case Mesh: return CollisionShapeFactory.createMeshShape(spatial);
-            //case VHACD: return CollisionShapeFactory.createVhacdShape(spatial, parameters, new CompoundCollisionShape());
-            //case VHACD4: return CollisionShapeFactory.createVhacdShape(spatial, parameters, new CompoundCollisionShape());
-            case Vhacd: throw new UnsupportedOperationException("VHACD collision shapes are not supported.");
-            case Vhacd4: throw new UnsupportedOperationException("VHACD collision shapes are not supported.");
-            default: return null;
-        }
-    }
-    
-    /**
      * Appends the entity's id to the userdata of the spatial.
      * <p>
      * The key of the userdata is "EntityId".
@@ -183,19 +183,19 @@ public class GameUtils {
      * @param spatial spatial to append to
      */
     public static void appendId(EntityId id, Spatial spatial) {
-        spatial.setUserData(EntityId.class.getName(), id.getId());
+        spatial.setUserData(ENTITYID_USERDATA, (id != null ? id.getId() : null));
     }
     
     /**
      * Fetches an appended {@link EntityId} from the spatial, if it exists.
      * 
      * @param spatial spatial to fetch from
-     * @param depth amount the algorithm will travel up the entity hierarchy to find the id, or -1 for no constraint
+     * @param depth amount the algorithm will travel up the spatial hierarchy to find the id, or -1 for no constraint
      * @return appended entity id, or null if none is found
      */
     public static EntityId fetchId(Spatial spatial, int depth) {
         while (spatial != null) {
-            Long id = spatial.getUserData(EntityId.class.getName());
+            Long id = spatial.getUserData(ENTITYID_USERDATA);
             if (id != null) return new EntityId(id);
             if (depth-- == 0) return null;
             spatial = spatial.getParent();
@@ -243,8 +243,96 @@ public class GameUtils {
         if (store == null) {
             store = new Transform();
         }
-        GameUtils.getWorldTransform(ed, id, store);
+        EntityUtils.getWorldTransform(ed, id, store);
         return new Ray(store.getTranslation(), store.getRotation().mult(Vector3f.UNIT_Z));
+    }
+    
+    /**
+     * Returns the component belonging to the entity, or a default component
+     * if none exists.
+     * <p>
+     * The default component class type determines the class type of the output component.
+     * 
+     * @param <T> component type
+     * @param ed entity data
+     * @param id entity id
+     * @param defaultValue default component (used if no other is found)
+     * @return 
+     */
+    public static <T extends EntityComponent> T getComponent(EntityData ed, EntityId id, T defaultValue) {
+        assert defaultValue != null : "Default value cannot be null.";
+        T c = ed.getComponent(id, (Class<T>)defaultValue.getClass());
+        if (c != null) {
+            return c;
+        } else {
+            return defaultValue;
+        }
+    }
+    
+    /**
+     * Returns the component belonging to the entity, or a default component
+     * if none exists.
+     * 
+     * @param <T> component type
+     * @param ed entity data
+     * @param id entity id
+     * @param type class type of the returned component
+     * @param defaultValue default component (used if no other is found)
+     * @return 
+     */
+    public static <T extends EntityComponent> T getComponent(EntityData ed, EntityId id, Class<T> type, T defaultValue) {
+        T c = ed.getComponent(id, type);
+        if (c != null) {
+            return c;
+        } else {
+            return defaultValue;
+        }
+    }
+    
+    /**
+     * Returns the component belonging to the entity, or throws a {@link NullPointerException}
+     * if none exists and {@code failOnMiss} is true.
+     * 
+     * @param <T> component type
+     * @param ed entity data
+     * @param id entity id
+     * @param type class type of the returned component
+     * @param failOnMiss if true, and if no component is found, an exception will be thrown.
+     * @throws NullPointerException if no component is found and {@code failOnMiss} is true
+     * @return 
+     */
+    public static <T extends EntityComponent> T getComponent(EntityData ed, EntityId id, Class<T> type, boolean failOnMiss) {
+        T c = ed.getComponent(id, type);
+        if (c != null) {
+            return c;
+        } else if (failOnMiss) {
+            throw new NullPointerException("Failed to locate "+type.getSimpleName()+" component of "+id+".");
+        } else {
+            return null;
+        }
+    }
+    
+    /**
+     * Gets the entity data via {@link GameSystemsState}.
+     * 
+     * @param app
+     * @param failOnMiss
+     * @return 
+     */
+    public static EntityData getEntityData(Application app, boolean failOnMiss) {
+        return app.getStateManager().getState(GameSystemsState.class, failOnMiss).get(EntityData.class, failOnMiss);
+    }
+    
+    /**
+     * Gets the entity data via {@link GameSystemsState}.
+     * <p>
+     * Throws an exception if the entity data is not found.
+     * 
+     * @param app
+     * @return 
+     */
+    public static EntityData getEntityData(Application app) {
+        return getEntityData(app, true);
     }
     
 }

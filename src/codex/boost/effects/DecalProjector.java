@@ -22,6 +22,7 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Splats images onto geometries.
@@ -37,7 +38,10 @@ public class DecalProjector {
     private Matrix4f projectorMatrix;
     private Matrix4f projectorMatrixInverse;
     private float separation;
-
+    private Function<Geometry, Boolean> filter;
+    
+    public DecalProjector() {}
+    
     public DecalProjector(Spatial spatial, Vector3f position, Quaternion rotation, Vector3f size) {
         ArrayList<Geometry> geometries = new ArrayList<>();
         spatial.depthFirstTraversal(s -> {
@@ -63,22 +67,26 @@ public class DecalProjector {
         setTransform(new Transform(position, rotation, new Vector3f(1, 1, 1)));
     }
 
-    public void setSize(Vector3f size) {
+    public final void setSize(Vector3f size) {
         this.size = size;
     }
 
-    public void setGeometries(Collection<Geometry> geometries) {
+    public final void setGeometries(Collection<Geometry> geometries) {
         this.geometries = new ArrayList<>();
         this.geometries.addAll(geometries);
     }
 
-    public void setSeparation(float separation) {
+    public final void setSeparation(float separation) {
         this.separation = separation;
     }
 
-    public void setTransform(Transform transform) {
+    public final void setTransform(Transform transform) {
         projectorMatrix = transform.toTransformMatrix();
         projectorMatrixInverse = projectorMatrix.invert();
+    }
+    
+    public final void setFilter(Function<Geometry, Boolean> filter) {
+        this.filter = filter;
     }
 
     public Geometry project() {
@@ -88,6 +96,9 @@ public class DecalProjector {
         ArrayList<DecalVertex> decalVertices = new ArrayList<>();
 
         for (Geometry geometry : geometries) {
+            if (filter != null && !filter.apply(geometry)) {
+                continue;
+            }
             geometry.computeWorldMatrix();
             Mesh mesh = geometry.getMesh();
             Vector3f[] positions = getVectors(geometry, VertexBuffer.Type.Position);

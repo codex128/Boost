@@ -13,6 +13,7 @@ import com.jme3.input.InputManager;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
 import com.jme3.renderer.RenderManager;
+import com.jme3.renderer.ViewPort;
 import com.jme3.scene.Node;
 import com.jme3.system.AppSettings;
 import com.simsilica.lemur.GuiGlobals;
@@ -32,7 +33,8 @@ public abstract class GameAppState extends BaseAppState {
     protected RenderManager renderManager;
     protected InputManager inputManager;
     protected InputMapper inputMapper;
-    protected Camera cam;
+    protected Camera cam, guiCam;
+    protected ViewPort viewPort, guiViewPort;
     protected Vector3f windowSize;
     protected Node rootNode, guiNode;
     
@@ -44,6 +46,9 @@ public abstract class GameAppState extends BaseAppState {
         renderManager = app.getRenderManager();
         inputManager = app.getInputManager();
         cam = app.getCamera();
+        guiCam = app.getGuiViewPort().getCamera();
+        viewPort = app.getViewPort();
+        guiViewPort = app.getGuiViewPort();
         windowSize = new Vector3f(settings.getWidth(), settings.getHeight(), 0f);
         if (GuiGlobals.getInstance() != null) {
             inputMapper = GuiGlobals.getInstance().getInputMapper();

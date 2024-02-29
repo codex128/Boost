@@ -15,18 +15,21 @@ import com.jme3.scene.control.AbstractControl;
  */
 public abstract class TypeControl <T extends Spatial> extends AbstractControl {
     
+    protected final Class<T> type;
     protected T tSpatial;
+    
+    public TypeControl(Class<T> type) {
+        this.type = type;
+    }
 
     @Override
     public void setSpatial(Spatial spat) {
         super.setSpatial(spat);
         if (spatial == null) {
             tSpatial = null;
-        }
-        else if (spatial instanceof Geometry) {
+        } else if (type.isAssignableFrom(spatial.getClass())) {
             tSpatial = (T)spatial;
-        }
-        else {
+        } else {
             throw new IllegalArgumentException("This control cannot control given type!");
         }
     }

@@ -54,9 +54,9 @@ import org.slf4j.LoggerFactory;
  * @author codex
  * @param <T>
  */
-public abstract class GameEntityContainer<T> {
+public abstract class BoostEntityContainer<T> {
 
-    static Logger log = LoggerFactory.getLogger(GameEntityContainer.class);
+    static Logger log = LoggerFactory.getLogger(BoostEntityContainer.class);
     
     private EntityData ed;
     private ComponentFilter filter;
@@ -68,13 +68,13 @@ public abstract class GameEntityContainer<T> {
     
     @SuppressWarnings("unchecked")
     @SafeVarargs
-    protected GameEntityContainer( EntityData ed, Class<? extends EntityComponent>... componentTypes ) {
+    protected BoostEntityContainer( EntityData ed, Class<? extends EntityComponent>... componentTypes ) {
         this(ed, null, componentTypes);
     }
  
     @SuppressWarnings("unchecked")
     @SafeVarargs
-    protected GameEntityContainer( EntityData ed, ComponentFilter filter, Class<? extends EntityComponent>... componentTypes ) {
+    protected BoostEntityContainer( EntityData ed, ComponentFilter filter, Class<? extends EntityComponent>... componentTypes ) {
         this.ed = ed;
         this.filter = filter;
         this.componentTypes = componentTypes;
@@ -83,17 +83,17 @@ public abstract class GameEntityContainer<T> {
         for( Type t = getClass().getGenericSuperclass(); t != null; ) {
             if( t instanceof ParameterizedType ) {
                 ParameterizedType pt = (ParameterizedType)t;
-                if( pt.getRawType() == GameEntityContainer.class ) {
+                if( pt.getRawType() == BoostEntityContainer.class ) {
                     if( pt.getActualTypeArguments()[0] instanceof ParameterizedType ) {
                         parameter = (Class)((ParameterizedType)pt.getActualTypeArguments()[0]).getRawType();
                     } else {
                         parameter = (Class)pt.getActualTypeArguments()[0];
                     }
                     break;
-                } 
+                }
             } else if( t instanceof Class ) {
                 t = ((Class)t).getGenericSuperclass();
-            } else {            
+            } else {
                 t = null;
             }
         }
