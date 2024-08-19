@@ -4,6 +4,7 @@
  */
 package codex.esboost.components;
 
+import com.jme3.math.Transform;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.simsilica.es.EntityComponent;
@@ -26,9 +27,19 @@ public class Position implements EntityComponent {
     public Position(Vector2f position, float zIndex) {
         this.position.set(position.x, position.y, zIndex);
     }
+    public Position(Transform t) {
+        t.getTranslation(position);
+    }
 
     public Vector3f getPosition() {
         return position;
+    }
+    public Vector3f getPosition(Vector3f store) {
+        if (store == null) {
+            return new Vector3f(position);
+        } else {
+            return store.set(position);
+        }
     }
     @Override
     public String toString() {

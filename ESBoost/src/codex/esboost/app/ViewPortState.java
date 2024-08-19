@@ -5,54 +5,49 @@
 package codex.esboost.app;
 
 import codex.boost.GameAppState;
+import codex.esboost.connection.ConnectionManager;
+import codex.esboost.EntityUtils;
+import codex.esboost.EntityViewPort;
 import codex.esboost.components.BackgroundColor;
-import codex.esboost.components.CameraInfo;
 import codex.esboost.components.ClearFlags;
-import codex.esboost.components.FieldOfView;
-import codex.esboost.components.Scene;
 import codex.esboost.components.View;
-import codex.esboost.components.ViewPortMember;
-import codex.esboost.components.ViewPortRect;
-import codex.esboost.factories.Prefab;
+import codex.esboost.connection.Provider;
 import com.jme3.app.Application;
-import com.jme3.math.Transform;
 import com.jme3.renderer.Camera;
 import com.jme3.renderer.ViewPort;
-import com.jme3.scene.Node;
-import com.jme3.scene.Spatial;
 import com.simsilica.es.Entity;
 import com.simsilica.es.EntityData;
 import com.simsilica.es.EntityId;
 import com.simsilica.es.EntitySet;
-import com.simsilica.state.GameSystemsState;
 import java.util.HashMap;
-import java.util.LinkedList;
 
 /**
  *
  * @author codex
  */
-public class ViewPortState extends GameAppState {
+public class ViewPortState extends GameAppState implements Provider<EntityViewPort, EntityId> {
     
     private EntityData ed;
-    private SceneMapState sceneState;
+    private ConnectionManager connector;
     private CameraState camState;
-    private EntitySet viewports, scenes;
-    private EntityId camId, viewPortId;
-    private final HashMap<EntityId, ViewPortWrapper> viewportMap = new HashMap<>();
+    private EntitySet viewports;
+    private EntityId mainVp, guiVp;
+    private final HashMap<EntityId, EntityViewPort> vpMap = new HashMap<>();
     
     @Override
     protected void init(Application app) {
-        ed = getState(GameSystemsState.class, true).get(EntityData.class, true);
-        sceneState = getState(SceneMapState.class, true);
+        ed = EntityUtils.getEntityData(app);
+        connector = EntityUtils.getConnectionManager(app);
         camState = getState(CameraState.class, true);
         viewports = ed.getEntities(View.class, BackgroundColor.class, ClearFlags.class);
-        scenes = ed.getEntities(Scene.class, ViewPortMember.class);
+        mainVp = ed.createEntity();
+        guiVp = ed.createEntity();
+        vpMap.put(mainVp, new EntityViewPort(mainVp, viewPort, View.MAIN, assetManager));
+        vpMap.put(guiVp, new EntityViewPort(guiVp, viewPort, View.MAIN, assetManager));
     }
     @Override
     protected void cleanup(Application app) {
         viewports.release();
-        scenes.release();
     }
     @Override
     protected void onEnable() {}
@@ -65,14 +60,15 @@ public class ViewPortState extends GameAppState {
             viewports.getChangedEntities().forEach(e -> updateViewPort(e));
             viewports.getRemovedEntities().forEach(e -> removeViewPort(e));
         }
-        if (scenes.applyChanges()) {
-            scenes.getAddedEntities().forEach(e -> assignScene(e));
-            scenes.getRemovedEntities().forEach(e -> removeScene(e));
-        }
+        connector.applyChanges(this);
+    }
+    @Override
+    public EntityViewPort fetchConnectingObject(EntityId key) {
+        return vpMap.get(key);
     }
     
     private void createViewPort(Entity e) {
-        if (!viewportMap.containsKey(e.getId())) {            
+        if (!vpMap.containsKey(e.getId())) {            
             View view = e.get(View.class);
             Camera c = camState.getCamera(view.getCamera());
             if (c == null) {
@@ -83,87 +79,41 @@ public class ViewPortState extends GameAppState {
                 case View.PRE: vp = renderManager.createPreView(view.getName(), c); break;
                 case View.MAIN: vp = renderManager.createMainView(view.getName(), c); break;
                 case View.POST: vp = renderManager.createPostView(view.getName(), c); break;
-                default: throw new IllegalArgumentException("Unknown order identifier: "+view.getOrder());
+                default: throw new IllegalArgumentException("Unknown view order identifier: "+view.getOrder());
             }
-            for (EntityId s : view.getScenes()) {
-                Node scene = sceneState.getScene(s);
-                if (scene != null && !vp.getScenes().contains(scene)) {
-                    vp.attachScene(scene);
-                }
-            }
-            viewportMap.put(e.getId(), new ViewPortWrapper(vp, view.getOrder()));
+            vpMap.put(e.getId(), new EntityViewPort(e.getId(), vp, view.getOrder(), assetManager));
         }
         updateViewPort(e);
     }
     private void updateViewPort(Entity e) {
-        ViewPortWrapper wrapper = viewportMap.get(e.getId());
+        EntityViewPort wrapper = vpMap.get(e.getId());
         if (wrapper != null) {
             ClearFlags flags = e.get(ClearFlags.class);
-            wrapper.viewPort.setClearFlags(flags.isColor(), flags.isDepth(), flags.isStencil());
-            wrapper.viewPort.setBackgroundColor(e.get(BackgroundColor.class).getColor());
+            wrapper.getViewPort().setClearFlags(flags.isColor(), flags.isDepth(), flags.isStencil());
+            wrapper.getViewPort().setBackgroundColor(e.get(BackgroundColor.class).getColor());
         }
     }
     private void removeViewPort(Entity e) {
-        ViewPortWrapper wrapper = viewportMap.remove(e.getId());
-        if (wrapper != null) switch (wrapper.order) {
-            case View.PRE: renderManager.removePreView(wrapper.viewPort); break;
-            case View.MAIN: renderManager.removeMainView(wrapper.viewPort); break;
-            case View.POST: renderManager.removePostView(wrapper.viewPort); break;
-        }
-    }
-    
-    private void assignScene(Entity e) {
-        Node scene = sceneState.getScene(e.getId());
-        if (scene != null) for (EntityId v : e.get(ViewPortMember.class).getViewPorts()) {
-            ViewPort vp = getViewPort(v);
-            if (vp != null) {
-                vp.attachScene(scene);
-            }
-        }
-    }
-    private void removeScene(Entity e) {
-        Node scene = sceneState.getScene(e.getId());
-        if (scene != null) for (EntityId v : e.get(ViewPortMember.class).getViewPorts()) {
-            ViewPort vp = getViewPort(v);
-            if (vp != null) {
-                vp.detachScene(scene);
+        EntityViewPort vp = vpMap.remove(e.getId());
+        if (vp != null) {
+            connector.makeDeletionContainingRequest(vp);
+            switch (vp.getOrder()) {
+                case View.PRE: renderManager.removePreView(vp.getViewPort()); break;
+                case View.MAIN: renderManager.removeMainView(vp.getViewPort()); break;
+                case View.POST: renderManager.removePostView(vp.getViewPort()); break;
             }
         }
     }
     
-    public EntityId getCameraId() {
-        return camId;
-    }
-    public EntityId getViewPortId() {
-        return viewPortId;
-    }
-    public ViewPort getViewPort(EntityId id) {
-        ViewPortWrapper wrapper = viewportMap.get(id);
-        if (wrapper != null) {
-            return wrapper.viewPort;
-        } else {
-            return null;
-        }
-    }
-    public int getViewPortOrder(EntityId id) {
-        ViewPortWrapper wrapper = viewportMap.get(id);
-        if (wrapper != null) {
-            return wrapper.order;
-        } else {
-            return -1;
-        }
+    public EntityViewPort getViewPort(EntityId id) {
+        return vpMap.get(id);
     }
     
-    private class ViewPortWrapper {
-        
-        public final ViewPort viewPort;
-        public final int order;
-
-        public ViewPortWrapper(ViewPort viewPort, int order) {
-            this.viewPort = viewPort;
-            this.order = order;
-        }
-        
+    public EntityId getMainViewPort() {
+        return mainVp;
+    }
+    public EntityId getGuiViewPort() {
+        return guiVp;
     }
     
 }

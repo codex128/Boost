@@ -27,6 +27,11 @@ public class WorldTransform implements EntityComponent {
         this.rotation.set(rotation);
         this.scale.set(scale);
     }
+    public WorldTransform(Position position, Rotation rotation, Scale scale) {
+        position.getPosition(this.translation);
+        rotation.getRotation(this.rotation);
+        scale.getScale(this.scale);
+    }
 
     public Vector3f getTranslation() {
         return translation;
@@ -39,12 +44,21 @@ public class WorldTransform implements EntityComponent {
     }
     
     public Vector3f getTranslation(Vector3f store) {
+        if (store == null) {
+            store = new Vector3f();
+        }
         return store.set(translation);
     }
     public Quaternion getRotation(Quaternion store) {
+        if (store == null) {
+            store = new Quaternion();
+        }
         return store.set(rotation);
     }
     public Vector3f getScale(Vector3f store) {
+        if (store == null) {
+            store = new Vector3f();
+        }
         return store.set(scale);
     }
     public Transform toTransform(Transform store) {

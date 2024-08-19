@@ -4,16 +4,21 @@
  */
 package codex.esboost;
 
+import codex.esboost.connection.ConnectionManager;
 import codex.esboost.components.*;
 import com.jme3.app.Application;
+import com.jme3.bullet.collision.PhysicsCollisionObject;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Ray;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Spatial;
+import com.simsilica.es.CreatedBy;
 import com.simsilica.es.EntityComponent;
 import com.simsilica.es.EntityData;
 import com.simsilica.es.EntityId;
 import com.simsilica.es.common.Decay;
+import com.simsilica.sim.GameSystemManager;
 import com.simsilica.sim.SimTime;
 import com.simsilica.state.GameSystemsState;
 import java.util.function.Consumer;
@@ -45,6 +50,15 @@ public class EntityUtils {
         if (scale != null) {
             store.getScale().multLocal(scale.getScale());
         }
+    }
+    private static Vector3f vectorDivide(Vector3f vector, Vector3f divisor, Vector3f store) {
+        if (store == null) {
+            store = new Vector3f();
+        }
+        store.x = vector.x/divisor.x;
+        store.y = vector.y/divisor.y;
+        store.z = vector.z/divisor.z;
+        return store;
     }
     
     /**
@@ -127,7 +141,7 @@ public class EntityUtils {
         } else if (store != null) {
             return store.set(Transform.IDENTITY);
         } else {
-            return new Transform().set(Transform.IDENTITY);
+            return new Transform();
         }
     }
     
@@ -313,26 +327,147 @@ public class EntityUtils {
     }
     
     /**
-     * Gets the entity data via {@link GameSystemsState}.
-     * 
-     * @param app
-     * @param failOnMiss
-     * @return 
-     */
-    public static EntityData getEntityData(Application app, boolean failOnMiss) {
-        return app.getStateManager().getState(GameSystemsState.class, failOnMiss).get(EntityData.class, failOnMiss);
-    }
-    
-    /**
-     * Gets the entity data via {@link GameSystemsState}.
-     * <p>
-     * Throws an exception if the entity data is not found.
+     * Fetches the entity data via {@link GameSystemsState}.
      * 
      * @param app
      * @return 
      */
     public static EntityData getEntityData(Application app) {
-        return getEntityData(app, true);
+        return app.getStateManager().getState(GameSystemsState.class, true).get(EntityData.class, true);
+    }
+    
+    /**
+     * Fetches the entity data.
+     * 
+     * @param manager
+     * @return 
+     */
+    public static EntityData getEntityData(GameSystemManager manager) {
+        return manager.get(EntityData.class, true);
+    }
+    
+    /**
+     * Fetches the connection manager.
+     * 
+     * @param app
+     * @return 
+     */
+    public static ConnectionManager getConnectionManager(Application app) {
+        return app.getStateManager().getState(GameSystemsState.class, true).get(ConnectionManager.class, true);
+    }
+    
+    /**
+     * Fetches the connection manager.
+     * 
+     * @param manager
+     * @return 
+     */
+    public static ConnectionManager getConnectionManager(GameSystemManager manager) {
+        return manager.get(ConnectionManager.class, true);
+    }
+    
+    /**
+     * Returns a component filter that filters entities by creator.
+     * 
+     * @param creator creator entity
+     * @param created 
+     * @return 
+     */
+    public static FunctionFilter<CreatedBy> filterByCreator(EntityId creator, boolean created) {
+        return new FunctionFilter<>(CreatedBy.class, c -> c.getCreatorId().equals(creator) == created);
+    }
+    
+    /**
+     * Converts world transform to local transform relative to the parent world transform.
+     * 
+     * @param world world transform to convert (not null, unaffected)
+     * @param parent parent world transform to be relative to (not null, unaffected)
+     * @param store stores result (null to create new {@link Transform} instance)
+     * @return 
+     */
+    public static Transform worldToLocal(Transform world, Transform parent, Transform store) {
+        if (store == null) {
+            store = new Transform();
+        }
+        store.setScale(parent.getScale());
+        Quaternion rotInv = parent.getRotation().inverse();
+        world.getTranslation().subtract(parent.getTranslation(), store.getTranslation());
+        store.getTranslation().divideLocal(store.getScale());
+        rotInv.mult(store.getTranslation(), store.getTranslation());
+        world.getRotation().mult(rotInv, store.getRotation());
+        vectorDivide(world.getScale(), store.getScale(), store.getScale());
+        return store;
+    }
+    
+    /**
+     * Sets the {@link Position}, {@link Rotation}, and (optionally) {@link Scale} components of the entity.
+     * 
+     * @param ed entity data
+     * @param id entity id
+     * @param transform transform to apply
+     * @param applyScale true to apply scale, otherwise scale will not be applied to the entity
+     */
+    public static void setEntityTransform(EntityData ed, EntityId id, Transform transform, boolean applyScale) {
+        ed.setComponents(id,
+            new Position(transform.getTranslation()),
+            new Rotation(transform.getRotation())
+        );
+        if (applyScale) {
+            ed.setComponent(id, new Scale(transform.getScale()));
+        }
+    }
+    
+    /**
+     * Gets the transform of a physics object in physics space.
+     * 
+     * @param object
+     * @param store
+     * @return 
+     */
+    public static Transform getPhysicsObjectTransform(PhysicsCollisionObject object, Transform store) {
+        if (store == null) {
+            store = new Transform();
+        }
+        object.getPhysicsLocation(store.getTranslation());
+        object.getPhysicsRotation(store.getRotation());
+        return store;
+    }
+    
+    /**
+     * Constructs a Ray from a Transform.
+     * 
+     * @param t
+     * @param store
+     * @return 
+     */
+    public static Ray transformToRay(Transform t, Ray store) {
+        if (store == null) {
+            store = new Ray();
+        }
+        store.origin.set(t.getTranslation());
+        t.getRotation().mult(Vector3f.UNIT_Z, store.direction);
+        return store;
+    }
+    
+    /**
+     * Converts a transform object into a direction.
+     * 
+     * @param t
+     * @param store
+     * @return 
+     */
+    public static Vector3f transformToDirection(Transform t, Vector3f store) {
+        return t.getRotation().mult(Vector3f.UNIT_Z, store);
+    }
+    
+    /**
+     * Fetches the game time object.
+     * 
+     * @param app
+     * @return 
+     */
+    public static SimTime getTime(Application app) {
+        return app.getStateManager().getState(GameSystemsState.class, true).getStepTime();
     }
     
 }

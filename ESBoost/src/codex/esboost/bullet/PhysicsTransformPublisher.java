@@ -6,11 +6,7 @@ package codex.esboost.bullet;
 
 import codex.esboost.EntityUtils;
 import codex.esboost.components.Parent;
-import codex.esboost.components.Position;
-import codex.esboost.components.Rotation;
-import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
-import com.jme3.math.Vector3f;
 import com.simsilica.bullet.EntityPhysicsObject;
 import com.simsilica.bullet.PhysicsObjectListener;
 import com.simsilica.es.EntityData;
@@ -23,9 +19,9 @@ import com.simsilica.sim.SimTime;
 public class PhysicsTransformPublisher implements PhysicsObjectListener {
     
     private final EntityData ed;
-    private final Transform tempTransform = new Transform();
-    private final Vector3f tempVec = new Vector3f();
-    private final Quaternion tempQuat = new Quaternion();
+    private final Transform physicsWorld = new Transform();
+    private final Transform parentWorld = new Transform();
+    private final Transform result = new Transform();
     
     public PhysicsTransformPublisher(EntityData ed) {
         this.ed = ed;
@@ -40,20 +36,16 @@ public class PhysicsTransformPublisher implements PhysicsObjectListener {
     @Override
     public void updated(EntityPhysicsObject object) {
         Parent parent = ed.getComponent(object.getId(), Parent.class);
-        object.getPhysicsLocation(tempVec);
-        object.getPhysicsRotation(tempQuat);
+        object.getPhysicsLocation(physicsWorld.getTranslation());
+        object.getPhysicsRotation(physicsWorld.getRotation());
         if (parent != null) {
             // Physics object transform must be converted from world coordinates to local coordinates
-            EntityUtils.getWorldTransform(ed, parent.getId(), tempTransform);
-            ed.setComponents(object.getId(),
-                new Position(tempVec.subtractLocal(tempTransform.getTranslation())),
-                // Division of two quaternions: (q1) * (inverse of q2)
-                new Rotation(tempQuat.multLocal(tempTransform.getRotation().inverseLocal()))
-            );
-        } else ed.setComponents(object.getId(),
-            new Position(tempVec),
-            new Rotation(tempQuat)
-        );
+            EntityUtils.getWorldTransform(ed, parent.getId(), parentWorld);
+            EntityUtils.worldToLocal(physicsWorld, parentWorld, result);
+            EntityUtils.setEntityTransform(ed, object.getId(), result, false);
+        } else {
+            EntityUtils.setEntityTransform(ed, object.getId(), physicsWorld, false);
+        }
     }
     @Override
     public void removed(EntityPhysicsObject object) {}

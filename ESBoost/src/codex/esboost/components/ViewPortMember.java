@@ -13,14 +13,14 @@ import com.simsilica.es.EntityId;
  */
 public class ViewPortMember implements EntityComponent {
     
-    private final EntityId[] viewPorts;
+    private final EntityId viewPort;
 
-    public ViewPortMember(EntityId... viewPorts) {
-        this.viewPorts = viewPorts;
+    public ViewPortMember(EntityId viewPort) {
+        this.viewPort = viewPort;
     }
 
-    public EntityId[] getViewPorts() {
-        return viewPorts;
+    public EntityId getViewPort() {
+        return viewPort;
     }
     
 }

@@ -4,9 +4,9 @@
  */
 package codex.esboost.factories;
 
-import com.simsilica.es.EntityComponent;
-import com.simsilica.es.EntityData;
 import com.simsilica.es.EntityId;
+import java.util.HashMap;
+import java.util.Objects;
 
 /**
  *
@@ -18,6 +18,7 @@ public interface Factory <T> {
     public T create(String name, EntityId customer);
     
     public default <R extends T> R create(String name, EntityId customer, Class<R> type, boolean failOnMiss) {
+        Objects.requireNonNull(name, "Name cannot be null");
         T v = create(name, customer);
         if (v != null && type.isAssignableFrom(v.getClass())) {
             return (R)v;
@@ -41,6 +42,7 @@ public interface Factory <T> {
         return create(name, null, type, false);
     }
     public default T create(String name, EntityId customer, boolean failOnMiss) {
+        Objects.requireNonNull(name, "Name cannot be null");
         T v = create(name, customer);
         if (v != null) {
             return v;

@@ -6,7 +6,7 @@ package codex.esboost.app;
 
 import codex.boost.GameAppState;
 import codex.esboost.EntityUtils;
-import codex.esboost.components.EntityLight;
+import codex.esboost.components.LightInfo;
 import codex.esboost.components.EnvMapSize;
 import codex.esboost.components.SceneMember;
 import com.jme3.app.Application;
@@ -27,7 +27,7 @@ import java.util.LinkedList;
 public class RuntimeProbeState extends GameAppState {
 
     private EntityData ed;
-    private SceneMapState sceneState;
+    private SceneState sceneState;
     private EntitySet probes, members;
     private final HashMap<EntityId, EnvironmentProbeControl> probeMap = new HashMap<>();
     private final LinkedList<EnvironmentProbeControl> assignList = new LinkedList<>();
@@ -36,12 +36,12 @@ public class RuntimeProbeState extends GameAppState {
     @Override
     protected void init(Application app) {
         ed = EntityUtils.getEntityData(app);
-        sceneState = getState(SceneMapState.class);
-        probes = ed.getEntities(EntityLight.filter(EntityLight.RUNTIME_PROBE),
-                EntityLight.class, EnvMapSize.class);
+        sceneState = getState(SceneState.class);
+        probes = ed.getEntities(LightInfo.filter(LightInfo.RUNTIME_PROBE),
+                LightInfo.class, EnvMapSize.class);
         if (sceneState != null) {
-            members = ed.getEntities(EntityLight.filter(EntityLight.RUNTIME_PROBE),
-                    EntityLight.class, EnvMapSize.class, SceneMember.class);
+            members = ed.getEntities(LightInfo.filter(LightInfo.RUNTIME_PROBE),
+                    LightInfo.class, EnvMapSize.class, SceneMember.class);
         }
     }
     @Override
@@ -59,7 +59,6 @@ public class RuntimeProbeState extends GameAppState {
     public void update(float tpf) {
         if (probes.applyChanges()) {
             for (Entity e : probes.getAddedEntities()) {
-                System.out.println("create runtime probe");
                 EnvironmentProbeControl control = new EnvironmentProbeControl(assetManager, e.get(EnvMapSize.class).getSize());
                 probeMap.put(e.getId(), control);
                 assignList.add(control);

@@ -12,7 +12,7 @@ public class Duration {
     
     private double duration, time;
 
-    public Duration(float duration) {
+    public Duration(double duration) {
         assert duration >= 0 : "Duration must be greater than or equal to zero";
         this.duration = duration;
         this.time = 0;
@@ -29,7 +29,7 @@ public class Duration {
         time = 0;
     }
     public double lock(boolean lock) {
-        return (time = lock ? -1 : 0);
+        return time = (lock ? -1 : 0);
     }
     
     public void setDuration(float duration) {

@@ -6,10 +6,14 @@ package codex.esboost.app;
 
 import codex.boost.GameAppState;
 import codex.boost.scene.SceneGraphIterator;
+import codex.esboost.EntityMaterial;
+import codex.esboost.EntityModel;
+import codex.esboost.EntityUtils;
 import codex.esboost.components.MatValue;
 import codex.esboost.components.MaterialInfo;
-import codex.esboost.components.ModelInfo;
 import codex.esboost.components.TargetTo;
+import codex.esboost.connection.ConnectionManager;
+import codex.esboost.connection.Connector;
 import codex.esboost.factories.Factory;
 import com.jme3.app.Application;
 import com.jme3.material.Material;
@@ -19,7 +23,6 @@ import com.simsilica.es.Entity;
 import com.simsilica.es.EntityData;
 import com.simsilica.es.EntityId;
 import com.simsilica.es.EntitySet;
-import com.simsilica.state.GameSystemsState;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -28,14 +31,14 @@ import java.util.LinkedList;
  *
  * @author codex
  */
-public class MaterialState extends GameAppState implements Factory<Material> {
+public class MaterialState extends GameAppState implements Factory<Material>, Connector<EntityMaterial, EntityModel> {
     
     private EntityData ed;
+    private ConnectionManager connector;
     private ModelViewState modelState;
     private EntitySet materials, matParams;
     private Factory<Material> factory;
-    private final HashMap<EntityId, Material> materialMap = new HashMap<>();
-    private final LinkedList<CachedMaterial> matCache = new LinkedList<>();
+    private final HashMap<EntityId, EntityMaterial> materialMap = new HashMap<>();
     private final LinkedList<CachedMatParam> paramCache = new LinkedList<>();
 
     public MaterialState() {}
@@ -45,9 +48,10 @@ public class MaterialState extends GameAppState implements Factory<Material> {
     
     @Override
     protected void init(Application app) {
-        ed = getState(GameSystemsState.class, true).get(EntityData.class, true);
+        ed = EntityUtils.getEntityData(app);
+        connector = EntityUtils.getConnectionManager(app);
         modelState = getState(ModelViewState.class, true);
-        materials = ed.getEntities(ModelInfo.class, MaterialInfo.class);
+        materials = ed.getEntities(EntityModel.class, MaterialInfo.class);
         matParams = ed.getEntities(MatValue.class, TargetTo.class);
         if (factory == null) {
             factory = this;
@@ -64,7 +68,6 @@ public class MaterialState extends GameAppState implements Factory<Material> {
     protected void onDisable() {}
     @Override
     public void update(float tpf) {
-        applyCachedMaterials();
         if (materials.applyChanges()) {
             materials.getAddedEntities().forEach(e -> updateModelMaterial(e));
             materials.getChangedEntities().forEach(e -> updateModelMaterial(e));
@@ -82,46 +85,39 @@ public class MaterialState extends GameAppState implements Factory<Material> {
         }
         return assetManager.loadMaterial(name);
     }
+    @Override
+    public void connect(EntityMaterial mat, EntityModel model) {
+        model.getModel().setMaterial(mat.getMaterial());
+    }
+    @Override
+    public void disconnect(EntityMaterial mat, EntityModel model) {}
+    @Override
+    public MultiConnectionHint getMultiConnectionHint() {
+        return Connector.MultiConnectionHint.OnlyObjectA;
+    }
     
     private void updateModelMaterial(Entity e) {
-        //ModelViewState.ModelView view = models.getObject(e.getId());
-        Spatial spatial = modelState.getSpatial(e.getId());
         String name = e.get(MaterialInfo.class).getPrefab().getName(ed);
-        Material mat = factory.create(name, e.getId(), true);
-        mat.setName(name);
+        EntityMaterial mat = new EntityMaterial(e.getId(), factory.create(name, e.getId(), true));
         materialMap.put(e.getId(), mat);
-        if (spatial != null) {
-            spatial.setMaterial(mat);
-        } else {
-            matCache.add(new CachedMaterial(e, mat));
-        }
-    }
-    private void applyCachedMaterials() {
-        if (matCache.isEmpty()) return;
-        for (Iterator<CachedMaterial> it = matCache.iterator(); it.hasNext();) {
-            CachedMaterial m = it.next();
-            Spatial spatial = modelState.getSpatial(m.entity.getId());
-            if (spatial != null) {
-                spatial.setMaterial(m.material);
-                it.remove();
-            }
-        }
+        connector.makePendingConnection(this, modelState, mat, e.getId());
     }
     private void updateMaterialParams(Entity e) {
         //ModelViewState.ModelView view = models.getObject(e.get(TargetTo.class).getTargetId());
-        Spatial spatial = modelState.getSpatial(e.getId());
+        EntityId target = e.get(TargetTo.class).getTargetId();
+        Spatial spatial = modelState.getSpatial(target);
         MatValue value = e.get(MatValue.class);
         if (spatial == null) {
             // cache the settings to set them later
-            paramCache.add(new CachedMatParam(e, value, e.get(TargetTo.class).getTargetId()));
+            paramCache.add(new CachedMatParam(e, value, target));
         } else {
             applyParamToMaterial(e, value, spatial);
         }
     }
     private void applyParamToMaterial(Entity e, MatValue value, Spatial spatial) {
-        Material mat = materialMap.get(e.getId());
+        EntityMaterial mat = materialMap.get(e.getId());
         if (mat != null) {
-            setMatParam(mat, value);
+            setMatParam(mat.getMaterial(), value);
         } else for (Spatial s : new SceneGraphIterator(spatial)) if (s instanceof Geometry) {
             setMatParam(((Geometry)s).getMaterial(), value);
         }
@@ -149,21 +145,10 @@ public class MaterialState extends GameAppState implements Factory<Material> {
         }
     }
     
-    public Material getMaterial(EntityId id) {
+    public EntityMaterial getMaterial(EntityId id) {
         return materialMap.get(id);
     }
     
-    private class CachedMaterial {
-        
-        public final Entity entity;
-        public final Material material;
-
-        public CachedMaterial(Entity entity, Material material) {
-            this.entity = entity;
-            this.material = material;
-        }
-        
-    }
     private class CachedMatParam {
         
         public final Entity entity;

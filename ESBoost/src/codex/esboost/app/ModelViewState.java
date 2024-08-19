@@ -5,19 +5,23 @@
 package codex.esboost.app;
 
 import codex.boost.GameAppState;
-import codex.boost.scene.SceneGraphIterator;
 import codex.esboost.BoostEntityContainer;
+import codex.esboost.connection.ConnectionManager;
+import codex.esboost.EntityModel;
 import codex.esboost.EntityUtils;
 import codex.esboost.bullet.CollisionShapeCache;
 import codex.esboost.bullet.GeometricShape;
 import codex.esboost.components.*;
+import codex.esboost.connection.Connector;
+import codex.esboost.connection.Delete;
+import codex.esboost.connection.Provider;
 import codex.esboost.factories.*;
 import com.jme3.app.Application;
+import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 import com.simsilica.es.Entity;
 import com.simsilica.es.EntitySet;
-import com.jme3.material.Material;
-import com.jme3.math.Transform;
+import com.jme3.scene.SceneGraphIterator;
 import com.simsilica.bullet.CollisionShapes;
 import com.simsilica.bullet.ShapeInfo;
 import com.simsilica.es.EntityData;
@@ -32,7 +36,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author codex
  */
-public class ModelViewState extends GameAppState {
+public class ModelViewState extends GameAppState implements
+        Connector<EntityModel, Node>, Provider<EntityModel, EntityId> {
     
     private static final Logger Log = LoggerFactory.getLogger(ModelViewState.class);
     
@@ -57,9 +62,11 @@ public class ModelViewState extends GameAppState {
     public static final String NECRO = "ModelViewState[necro]";
     
     private EntityData ed;
+    private ConnectionManager connector;
+    private SceneState sceneState;
     private ModelContainer models;
-    private EntitySet geometryShapes;
-    private Factory<Spatial> modelFactory;
+    private EntitySet sceneModels, geometryShapes;
+    private final Factory<Spatial> modelFactory;
     private Factory<Design> designFactory;
     private CollisionShapeCache shapeCache;
     private final HashMap<EntityId, Spatial> modelCache = new HashMap<>();
@@ -70,9 +77,14 @@ public class ModelViewState extends GameAppState {
     
     @Override
     protected void init(Application app) {
-        ed = getState(GameSystemsState.class, true).get(EntityData.class, true);
+        ed = EntityUtils.getEntityData(app);
+        connector = EntityUtils.getConnectionManager(app);
+        sceneState = getState(SceneState.class, true);
         models = new ModelContainer();
-        geometryShapes = ed.getEntities(ModelInfo.class, GeometricShapeInfo.class);
+        geometryShapes = ed.getEntities(EntityModel.class, GeometricShapeInfo.class);
+        if (sceneState != null) {
+            sceneModels = ed.getEntities(EntityModel.class, SceneMember.class);
+        }
         CollisionShapes shapes = getState(GameSystemsState.class, true).get(CollisionShapes.class);
         if (shapes != null && shapes instanceof CollisionShapeCache) {
             shapeCache = (CollisionShapeCache)shapes;
@@ -81,6 +93,7 @@ public class ModelViewState extends GameAppState {
     @Override
     protected void cleanup(Application app) {
         geometryShapes.release();
+        sceneModels.release();
         modelCache.clear();
     }
     @Override
@@ -93,50 +106,67 @@ public class ModelViewState extends GameAppState {
     }
     @Override
     public void update(float tpf) {
-        // check for new geometry physics shape entities
         boolean shapesUpdated = geometryShapes.applyChanges();
         models.update();
         if (shapesUpdated) {
-            geometryShapes.getAddedEntities().forEach(e -> createGeometicCollisionShape(e));
+            geometryShapes.getAddedEntities().forEach(e -> createGeometricCollisionShape(e));
         }
+        connector.applyChanges(this);
+        if (sceneModels != null && sceneModels.applyChanges()) {
+            sceneModels.getAddedEntities().forEach(e -> assignModelToScene(e, true));
+        }
+    }
+    @Override
+    public void connect(EntityModel model, Node scene) {
+        scene.attachChild(model.getModel());
+    }
+    @Override
+    public void disconnect(EntityModel model, Node scene) {
+        scene.detachChild(model.getModel());
+    }
+    @Override
+    public MultiConnectionHint getMultiConnectionHint() {
+        return Connector.MultiConnectionHint.OnlyObjectB;
+    }
+    @Override
+    public EntityModel fetchConnectingObject(EntityId key) {
+        return models.getObject(key);
     }
     
     public void setDesignFactory(Factory<Design> factory) {
         this.designFactory = factory;
     }
+    
+    public EntityModel getModel(EntityId id) {
+        return models.getObject(id);
+    }
     public Spatial getSpatial(EntityId id) {
-        ModelView view = models.getObject(id);
+        EntityModel view = models.getObject(id);
         if (view == null) {
-            Spatial spatial = modelCache.get(id);
-            if (spatial != null) {
-                return spatial;
-            }
-            return null;
+            return modelCache.get(id);
         }
-        return view.spatial;
+        return view.getModel();
     }
     
     private Spatial createModel(EntityId customer, ModelInfo info) {
         // check if a model is already cached for this entity
         Spatial spatial = modelCache.remove(customer);
         if (spatial == null) {
-            // manufacture a new model for the entity
             if (info.getName(ed).equals(NECRO)) {
+                // steal another entity's model
                 NecroTarget id = ed.getComponent(customer, NecroTarget.class);
                 if (id == null) {
                     throw new NullPointerException("Necro model must have a target.");
                 }
-                ModelView target = models.getObject(id.getTarget());
-                if (target.necro != null) {
+                EntityModel target = models.getObject(id.getTarget());
+                if (target.getNecro() != null) {
                     throw new IllegalStateException("Cannot necro a model that has already been necroed.");
                 }
-                target.necro = customer;
-                spatial = target.spatial;
+                target.setNecro(customer);
+                spatial = target.getModel();
             } else {
-                spatial = modelFactory.create(info.getPrefab().getName(ed), customer);
-                if (spatial == null) {
-                    throw new NullPointerException("Prefab \""+info.getPrefab().getName(ed)+"\" failed to manufacture model.");
-                }
+                // manufacture a new model for the entity
+                spatial = modelFactory.create(info.getPrefab().getName(ed), customer, true);
             }
             EntityUtils.appendId(customer, spatial);
         }
@@ -145,8 +175,7 @@ public class ModelViewState extends GameAppState {
     private void cacheModel(EntityId id, Spatial spatial) {
         modelCache.put(id, spatial);
     }
-    
-    private void createGeometicCollisionShape(Entity e) {
+    private void createGeometricCollisionShape(Entity e) {
         if (shapeCache == null) {
             Log.warn("No CollisionShapeCache defined; cannot create geometric shape. Skipping.");
             return;
@@ -174,6 +203,7 @@ public class ModelViewState extends GameAppState {
             }
             Design design = designFactory.create(name);
             if (design == null) {
+                Log.warn("Spatial design name \""+name+"\" failed to create design.");
                 continue;
             }
             design.create(spatial);
@@ -194,85 +224,47 @@ public class ModelViewState extends GameAppState {
         }
         for (Spatial spatial : list) {
             spatial.removeFromParent();
-            // attaching now may have been causing incorrect positioning
+            // attaching now was causing incorrect positioning, for some reason
             //rootNode.attachChild(spatial);
         }
         list.clear();
     }
-    
-    private class ModelView {
-        
-        private final Entity entity;
-        private Spatial spatial;
-        private Material material;
-        private String prefabName;
-        private EntityId necro;
-        private final Transform tempTransform = new Transform();
-        
-        public ModelView(Entity entity) {
-            this.entity = entity;
-            ModelInfo info = entity.get(ModelInfo.class);
-            spatial = createModel(entity.getId(), info);
-            if (spatial.getParent() == null) {
-                rootNode.attachChild(spatial);
-            }
-            prefabName = info.getName(ed);
-            if (material != null) {
-                spatial.setMaterial(material);
-            }
-            persistentUpdate();
-            CompoundModel s = ed.getComponent(entity.getId(), CompoundModel.class);
-            if (s != null) {
-                prepareCompoundModel(spatial);
-            }
+    private void assignModelToScene(Entity e, boolean attach) {
+        EntityModel model = models.getObject(e.getId());
+        if (attach) {
+            connector.makePendingConnection(this, sceneState, model, e.get(SceneMember.class).getScene());
+        } else {
+            connector.makeDeletionRequest(sceneState, Delete.containing(model));
         }
-        
-        public final void persistentUpdate() {
-            if (necro == null) {
-                EntityUtils.getWorldTransform(ed, entity.getId(), tempTransform);
-                spatial.setLocalTransform(tempTransform);
-            }
-        }
-        
-        public void destroy() {
-            if (necro == null) {
-                EntityUtils.appendId(null, spatial);
-                spatial.removeFromParent();
-            }
-        }
-        
     }
-    private class ModelContainer extends BoostEntityContainer<ModelView> {
+    
+    private class ModelContainer extends BoostEntityContainer<EntityModel> {
 
         public ModelContainer() {
             super(ed, ModelInfo.class);
         }
         
         @Override
-        protected ModelView addObject(Entity entity) {
-            return new ModelView(entity);
+        protected EntityModel addObject(Entity entity) {
+            Spatial spatial = createModel(entity.getId(), entity.get(ModelInfo.class));
+            EntityModel model = new EntityModel(entity.getId(), spatial);
+            connector.makePendingConnection(ModelViewState.this, sceneState, model, sceneState.getRootNode());
+            CompoundModel s = ed.getComponent(entity.getId(), CompoundModel.class);
+            if (s != null) {
+                prepareCompoundModel(spatial);
+            }
+            return model;
         }
         @Override
-        protected void lazyObjectUpdate(ModelView t, Entity entity) {}
+        protected void lazyObjectUpdate(EntityModel t, Entity entity) {}
         @Override
-        public void persistentObjectUpdate(ModelView t, Entity entity) {
-            t.persistentUpdate();
+        public void persistentObjectUpdate(EntityModel t, Entity entity) {
+            t.updateTransform(ed);
         }
         @Override
-        protected void removeObject(ModelView t, Entity entity) {
-            t.destroy();
-        }
-        
-    }
-    
-    private class CachedMatParam {
-        
-        public final MatValue value;
-        public final EntityId target;
-
-        public CachedMatParam(MatValue value, EntityId target) {
-            this.value = value;
-            this.target = target;
+        protected void removeObject(EntityModel t, Entity entity) {
+            EntityUtils.appendId(null, t.getModel());
+            connector.makeDeletionContainingRequest(t);
         }
         
     }

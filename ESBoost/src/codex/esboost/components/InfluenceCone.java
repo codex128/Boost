@@ -18,7 +18,7 @@ public class InfluenceCone implements EntityComponent {
     private final float outerAngle;
 
     public InfluenceCone() {
-        this(FastMath.PI, FastMath.PI);
+        this(FastMath.HALF_PI-0.01f, FastMath.HALF_PI-0.001f);
     }
     public InfluenceCone(float innerAngle, float outerAngle) {
         this.innerAngle = innerAngle;

@@ -18,13 +18,11 @@ public class View implements EntityComponent {
     private final EntityId camera;
     private final String name;
     private final int order;
-    private final EntityId[] scenes;
 
-    public View(EntityId camera, String name, int order, EntityId... scenes) {
+    public View(EntityId camera, String name, int order) {
         this.camera = camera;
         this.name = name;
         this.order = order;
-        this.scenes = scenes;
     }
 
     public EntityId getCamera() {
@@ -35,9 +33,6 @@ public class View implements EntityComponent {
     }
     public int getOrder() {
         return order;
-    }
-    public EntityId[] getScenes() {
-        return scenes;
     }
 
     @Override
