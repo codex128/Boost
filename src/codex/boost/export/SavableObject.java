@@ -38,6 +38,8 @@ import com.jme3.export.OutputCapsule;
 import com.jme3.export.Savable;
 import com.jme3.util.IntMap;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -46,25 +48,30 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Saves the internal object if it is a supported savable type.
+ * Saves the internal object, either as a ligitimate savable,
+ * or by reflection.
  * 
  * @author codex
  */
-public class SavableObject implements Savable {
+public class SavableObject implements ProxySavable<Object> {
 
     public static final SavableObject NULL = new SavableObject();
     private static final String NAME = "name";
     private static final String OBJECT = "object";
     private static final String TYPE = "type";
+    private static final String ARGUMENTS = "arguments";
     private static final String NULL_TYPE = "Null";
+    private static final String CONSTRUCTED_TYPE = "Constructed";
     private static final Logger LOG = Logger.getLogger(SavableObject.class.getName());
     
     private String name;
     private Object object;
+    private Savable[] arguments;
     
     public SavableObject() {}
     public SavableObject(String name) {
@@ -78,6 +85,14 @@ public class SavableObject implements Savable {
         this.object = object;
     }
     
+    @Override
+    public void setObject(Object object) {
+        this.object = object;
+    }
+    @Override
+    public Object getObject() {
+        return object;
+    }
     @Override
     public void write(JmeExporter ex) throws IOException {
         OutputCapsule out = ex.getCapsule(this);
@@ -197,7 +212,9 @@ public class SavableObject implements Savable {
             out.writeIntSavableMap((IntMap)object, OBJECT, null);
             out.write("IntMap", TYPE, NULL_TYPE);
         } else {
-            saveNull(out, "Attempted to save unsupported type {0}.");
+            out.write(object.getClass().getName(), OBJECT, null);
+            out.write(arguments, ARGUMENTS, new Savable[0]);
+            out.write(CONSTRUCTED_TYPE, TYPE, NULL_TYPE);
         }
     }
     @Override
@@ -317,6 +334,9 @@ public class SavableObject implements Savable {
             case "IntMap":
                 object = in.readIntSavableMap(OBJECT, null);
                 break;
+            case CONSTRUCTED_TYPE:
+                object = readConstructed(in);
+                break;
             case NULL_TYPE:
                 object = null;
                 break;
@@ -325,11 +345,51 @@ public class SavableObject implements Savable {
                 break;
         }
     }
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 61 * hash + Objects.hashCode(this.name);
+        hash = 61 * hash + Objects.hashCode(this.object);
+        return hash;
+    }
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final SavableObject other = (SavableObject) obj;
+        if (!Objects.equals(this.name, other.name)) {
+            return false;
+        }
+        return Objects.equals(this.object, other.object);
+    }
     
-    private void saveNull(OutputCapsule out, String msg) throws IOException {
-        String type = object.getClass().getName();
-        LOG.log(Level.WARNING, msg, type);
-        out.write(type, TYPE, NULL_TYPE);
+    private Object readConstructed(InputCapsule in) throws IOException {
+        String className = in.readString(OBJECT, null);
+        Object[] args = in.readSavableArray(ARGUMENTS, new Savable[0]);
+        Class[] argTypes = new Class[args.length];
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] instanceof ProxySavable) {
+                args[i] = ((ProxySavable)args[i]).getObject();
+            }
+            argTypes[i] = args[i].getClass();
+        }
+        try {
+            Constructor c = Class.forName(className).getDeclaredConstructor(argTypes);
+            c.setAccessible(true);
+            return c.newInstance(args);
+        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException
+                | InstantiationException | IllegalAccessException | IllegalArgumentException
+                | InvocationTargetException ex) {
+            LOG.log(Level.SEVERE, "Error instantiating saved object.", ex);
+            return null;
+        }
     }
     
     /**
@@ -344,12 +404,15 @@ public class SavableObject implements Savable {
     }
     
     /**
-     * Sets the internal object.
+     * Sets the arguments used to instantiate the internal object
+     * if it is not savable.
+     * <p>
+     * default=null (no arguments)
      * 
-     * @param object 
+     * @param arguments 
      */
-    public void setObject(Object object) {
-        this.object = object;
+    public void setArguments(Savable... arguments) {
+        this.arguments = arguments;
     }
     
     /**
@@ -359,26 +422,6 @@ public class SavableObject implements Savable {
      */
     public String getName() {
         return name;
-    }
-    
-    /**
-     * Gets the internal object.
-     * 
-     * @return 
-     */
-    public Object getObject() {
-        return object;
-    }
-    
-    /**
-     * Gets the internal object of the given type.
-     * 
-     * @param <T>
-     * @param type
-     * @return 
-     */
-    public <T> T getObject(Class<T> type) {
-        return (T)object;
     }
     
     /**

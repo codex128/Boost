@@ -14,8 +14,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Adapts materials by merging registered tributary materials into them.
@@ -24,7 +22,6 @@ import java.util.logging.Logger;
  */
 public class MaterialAdapter {
     
-    private static final Logger logger = Logger.getLogger(MaterialAdapter.class.getName());
     private final HashMap<String, LinkedList<String>> adapters = new HashMap<>();
     
     /**
@@ -119,19 +116,23 @@ public class MaterialAdapter {
      */
     public static MaterialDef merge(MaterialDef target, MaterialDef tributary) {
         try {
+            // add cloned technique defs to intermediate list to avoid concurrent modification
+            LinkedList<TechniqueDef> clones = new LinkedList<>();
+            for (String n : tributary.getTechniqueDefsNames()) {
+                for (TechniqueDef t : tributary.getTechniqueDefs(n)) {
+                    clones.add(t.clone());
+                }
+            }
+            for (TechniqueDef t : clones) {
+                target.addTechniqueDef(t);
+            }
+            clones.clear();
+            // move material parameters
             for (MatParam p : tributary.getMaterialParams()) {
                 if (target.getMaterialParam(p.getName()) == null) {
                     target.addMaterialParam(p.getVarType(), p.getName(), p.getValue());
                     MatParam clone = target.getMaterialParam(p.getName());
                     clone.setTypeCheckEnabled(p.isTypeCheckEnabled());
-                } else {
-                    logger.log(Level.WARNING, "Could not merge material param \"{0}\""
-                            + " because it already exists in the target material.", p.getName());
-                }
-            }
-            for (String n : tributary.getTechniqueDefsNames()) {
-                for (TechniqueDef t : tributary.getTechniqueDefs(n)) {
-                    tributary.addTechniqueDef(t.clone());
                 }
             }
         } catch (Exception ex) {
