@@ -5,7 +5,7 @@
 package codex.boost.test;
 
 import codex.boost.anim.RootMotionControl;
-import codex.boost.mesh.Quad;
+import codex.boost.mesh.NormalQuad;
 import com.jme3.anim.AnimComposer;
 import com.jme3.anim.SkinningControl;
 import com.jme3.anim.tween.Tweens;
@@ -72,7 +72,7 @@ public class TestRootMotion extends SimpleApplication implements ActionListener 
         chaseCam.setZoomSensitivity(5);
         flyCam.setEnabled(false);
         
-        Quad quad = new Quad(Vector3f.UNIT_Y, Vector3f.UNIT_Z, 100, 100, .5f, .5f);
+        NormalQuad quad = new NormalQuad(Vector3f.UNIT_Y, Vector3f.UNIT_Z, 100, 100, .5f, .5f);
         //quad.scaleTextureCoordinates(new Vector2f(10f, 10f));
         Geometry floor = new Geometry("floor", quad);
         Material floorMat = new Material(assetManager, "Common/MatDefs/Light/Lighting.j3md");

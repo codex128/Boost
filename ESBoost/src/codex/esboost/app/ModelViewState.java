@@ -81,9 +81,9 @@ public class ModelViewState extends GameAppState implements
         connector = EntityUtils.getConnectionManager(app);
         sceneState = getState(SceneState.class, true);
         models = new ModelContainer();
-        geometryShapes = ed.getEntities(EntityModel.class, GeometricShapeInfo.class);
+        geometryShapes = ed.getEntities(ModelInfo.class, GeometricShapeInfo.class);
         if (sceneState != null) {
-            sceneModels = ed.getEntities(EntityModel.class, SceneMember.class);
+            sceneModels = ed.getEntities(ModelInfo.class, SceneMember.class);
         }
         CollisionShapes shapes = getState(GameSystemsState.class, true).get(CollisionShapes.class);
         if (shapes != null && shapes instanceof CollisionShapeCache) {

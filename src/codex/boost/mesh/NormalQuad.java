@@ -13,12 +13,12 @@ import com.jme3.util.BufferUtils;
  *
  * @author codex
  */
-public class Quad extends Mesh {    
+public class NormalQuad extends Mesh {    
     
     private static final float[] uvs = {1, 1, 1, 0, 0, 0, 0, 1};
     private static final int[] index = {0, 2, 1, 0, 3, 2};
     
-    public Quad(Vector3f normal, Vector3f up, float width, float height, float originX, float originY) {
+    public NormalQuad(Vector3f normal, Vector3f up, float width, float height, float originX, float originY) {
         Vector3f across = normal.cross(up);
         Vector3f climb = normal.cross(across);
         Vector3f[] verts = {

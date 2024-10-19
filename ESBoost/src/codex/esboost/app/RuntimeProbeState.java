@@ -86,8 +86,8 @@ public class RuntimeProbeState extends GameAppState {
             }
         }
         for (Entity e : probes) {
-            EntityUtils.getWorldTransform(ed, e.getId(), tempTransform);
             EnvironmentProbeControl control = probeMap.get(e.getId());
+            EntityUtils.getWorldTransform(ed, e.getId(), tempTransform);
             control.setPosition(tempTransform.getTranslation());
         }
         // controls that did not get assigned to a scene above are assigned to the rootnode

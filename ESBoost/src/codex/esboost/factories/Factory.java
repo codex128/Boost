@@ -5,7 +5,6 @@
 package codex.esboost.factories;
 
 import com.simsilica.es.EntityId;
-import java.util.HashMap;
 import java.util.Objects;
 
 /**

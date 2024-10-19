@@ -15,6 +15,8 @@ import com.simsilica.es.EntityComponent;
  */
 public class Position implements EntityComponent {
     
+    public static final Position ZERO = new Position();
+    
     private final Vector3f position = new Vector3f();
 
     public Position() {}

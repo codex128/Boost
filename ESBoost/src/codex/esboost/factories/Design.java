@@ -7,6 +7,7 @@ package codex.esboost.factories;
 import codex.esboost.components.Parent;
 import codex.esboost.components.Position;
 import codex.esboost.components.Rotation;
+import codex.esboost.components.Scale;
 import codex.esboost.components.SceneMember;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Spatial;
@@ -38,6 +39,9 @@ public interface Design {
     }
     public default void setRotation(Rotation rotation) {
         getDesignTools().ed.setComponent(getMainEntity(), rotation);
+    }
+    public default void setScale(Scale scale) {
+        getDesignTools().ed.setComponent(getMainEntity(), scale);
     }
     public default void setParent(Parent parent) {
         getDesignTools().ed.setComponent(getMainEntity(), parent);

@@ -20,6 +20,9 @@ import com.simsilica.lemur.component.QuadBackgroundComponent;
 import com.simsilica.lemur.component.TbtQuadBackgroundComponent;
 import com.simsilica.lemur.style.Attributes;
 import com.simsilica.lemur.style.Styles;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * Ported to Java from Groovy.
@@ -78,8 +81,11 @@ public class AppStyles {
             }       
         };
         
+        HashMap<Button.ButtonAction, List<Command<? extends Button>>> buttonActions = new HashMap<>();
+        buttonActions.put(Button.ButtonAction.Click, Arrays.asList(pressedCommand, repeatCommand));
+        
         Attributes attr = styles.getSelector(STYLE);
-        attr.set("font", assetManager.loadFont("Interface/Fonts/FreeMono.fnt"));
+        //attr.set("font", assetManager.loadFont("Interface/Fonts/FreeMono.fnt"));
         attr.set("fontSize", 14);
         //attr.set("insets", new Insets3f(3, 0, 3, 0));
         
@@ -117,6 +123,7 @@ public class AppStyles {
         attr.set("shadowOffset", new Vector3f(2, -2, -1));
         attr.set("background", new QuadBackgroundComponent(new ColorRGBA(0.75f, 0.75f, 0.85f, 0.5f)));
         attr.set("insets", new Insets3f(2, 2, 2, 2));
+        attr.set("buttonCommands", buttonActions);
         
         attr = styles.getSelector("button", STYLE);
         attr.set("background", gradient.clone());

@@ -12,4 +12,9 @@ public interface DesignFactory extends Factory<Design> {
     
     public void register(String name, Assembler<Design> assembler);
     
+    public default void registerGroup(String name, Object... args) {
+        // Register all designs that are annotated with the group name.
+        // Args are used to instantiate designs.
+    }
+    
 }

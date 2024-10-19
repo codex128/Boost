@@ -22,6 +22,7 @@ import com.simsilica.sim.GameSystemManager;
 import com.simsilica.sim.SimTime;
 import com.simsilica.state.GameSystemsState;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Useful utility methods for ECS.
@@ -333,7 +334,7 @@ public class EntityUtils {
      * @return 
      */
     public static EntityData getEntityData(Application app) {
-        return app.getStateManager().getState(GameSystemsState.class, true).get(EntityData.class, true);
+        return getRegistered(app, EntityData.class);
     }
     
     /**
@@ -353,7 +354,7 @@ public class EntityUtils {
      * @return 
      */
     public static ConnectionManager getConnectionManager(Application app) {
-        return app.getStateManager().getState(GameSystemsState.class, true).get(ConnectionManager.class, true);
+        return getRegistered(app, ConnectionManager.class);
     }
     
     /**
@@ -364,6 +365,18 @@ public class EntityUtils {
      */
     public static ConnectionManager getConnectionManager(GameSystemManager manager) {
         return manager.get(ConnectionManager.class, true);
+    }
+    
+    /**
+     * Gets the object registered with the type in {@link GameSystemsState}.
+     * 
+     * @param <T>
+     * @param app
+     * @param type
+     * @return 
+     */
+    public static <T> T getRegistered(Application app, Class<T> type) {
+        return app.getStateManager().getState(GameSystemsState.class, true).get(type, true);
     }
     
     /**
@@ -468,6 +481,24 @@ public class EntityUtils {
      */
     public static SimTime getTime(Application app) {
         return app.getStateManager().getState(GameSystemsState.class, true).getStepTime();
+    }
+    
+    /**
+     * 
+     * 
+     * @param <T>
+     * @param ed
+     * @param id
+     * @param type
+     * @param defValue
+     * @param func
+     * @return 
+     */
+    @SuppressWarnings("null")
+    public static <T extends EntityComponent> boolean entityState(EntityData ed, EntityId id,
+            Class<T> type, boolean defValue, Function<T, Boolean> func) {
+        T component = ed.getComponent(id, type);
+        return (component != null ? func.apply(component) : defValue);
     }
     
 }
