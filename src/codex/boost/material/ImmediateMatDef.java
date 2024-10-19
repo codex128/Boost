@@ -88,22 +88,26 @@ public class ImmediateMatDef extends MaterialDef {
         return createTechnique(TechniqueDef.DEFAULT_TECHNIQUE_NAME);
     }
     public TechniqueAdapter createTechnique(String name) {
-        return new TechniqueAdapter(this, name);
+        return createTechnique(this, name);
     }
     public Material createMaterial() {
         return new Material(this);
     }
     
+    public static TechniqueAdapter createTechnique(MaterialDef matdef, String name) {
+        return new TechniqueAdapter(matdef, name);
+    }
+    
     public static class TechniqueAdapter {
         
-        private final ImmediateMatDef matdef;
+        private final MaterialDef matdef;
         private final TechniqueDef techdef;
         private final EnumMap<Shader.ShaderType, String> shaderNames = new EnumMap<>(Shader.ShaderType.class);
         private final ArrayList<EnumMap<Shader.ShaderType, String>> shaderVersions = new ArrayList<>(4);
         private final LinkedList<String> presetDefines = new LinkedList<>();
         private int[] defShaderVersions;
         
-        private TechniqueAdapter(ImmediateMatDef matdef, String name) {
+        private TechniqueAdapter(MaterialDef matdef, String name) {
             this.matdef = matdef;
             this.techdef = new TechniqueDef(name, createSortId(this.matdef.getName(), name));
         }

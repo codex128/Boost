@@ -33,7 +33,6 @@ import com.jme3.asset.AssetKey;
 import com.jme3.asset.AssetLocator;
 import com.jme3.asset.AssetManager;
 import com.jme3.shader.Shader;
-import com.jme3.shader.plugins.ShaderAssetKey;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
@@ -60,10 +59,14 @@ public class ImmediateShader implements AssetLocator {
         this.prettyCode = prettyCode;
     }
     
-    public ImmediateShader line(Object... code) {
+    public ImmediateShader appendTabs() {
         if (prettyCode) for (int i = 0; i < indent; i++) {
             this.code.append(tab);
         }
+        return this;
+    }
+    public ImmediateShader line(Object... code) {
+        appendTabs();
         append(code);
         this.code.append('\n');
         return this;
@@ -121,14 +124,14 @@ public class ImmediateShader implements AssetLocator {
         return function("void", "main");
     }
     public ImmediateShader function(String returnType, String name, String... args) {
-        line(returnType, ' ', name, '(');
+        append(returnType, ' ', name, '(');
         for (int i = 0; i < args.length; i++) {
             code.append(args[i]);
             if (i < args.length-1) {
                 code.append(", ");
             }
         }
-        code.append(") {");
+        line(") {");
         indent++;
         return this;
     }
@@ -167,6 +170,7 @@ public class ImmediateShader implements AssetLocator {
     }
     
     public ImmediateShader call(String funcName, String... args) {
+        appendTabs();
         this.code.append(funcName).append('(');
         for (int i = 0; i < args.length; i++) {
             this.code.append(args[i]);
@@ -174,7 +178,7 @@ public class ImmediateShader implements AssetLocator {
                 this.code.append(',');
             }
         }
-        this.code.append(");");
+        this.code.append(");\n");
         return this;
     }
     
@@ -187,6 +191,10 @@ public class ImmediateShader implements AssetLocator {
     public ImmediateShader ifdef(String name) {
         defs++;
         return line("#ifdef ", name);
+    }
+    public ImmediateShader ifndef(String name) {
+        defs++;
+        return line("#ifndef ", name);
     }
     public ImmediateShader elseifdef(String name) {
         return line("#elif ", name);
@@ -276,6 +284,7 @@ public class ImmediateShader implements AssetLocator {
     public AssetInfo locate(AssetManager manager, AssetKey key) {
         String name = key.getName();
         if (name.startsWith(PREFIX)) {
+            System.out.println(name);
             name = name.substring(name.indexOf(':') + 1, name.lastIndexOf('.'));
             return new ShaderInfo(manager, key, name);
         } else {
