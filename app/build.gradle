@@ -14,14 +14,6 @@ repositories {
     jcenter()
 }
 
-dependencyResolutionManagement {
-	repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-	repositories {
-		mavenCentral()
-		maven { url 'https://jitpack.io' }
-	}
-}
-
 project.ext {
   jmeVer = '3.8.0-alpha2' 
 }
@@ -32,7 +24,6 @@ dependencies {
     implementation "com.simsilica:lemur-proto:1.13.0"
     implementation "com.github.stephengold:Minie:8.2.0"
     implementation "com.github.stephengold:SkyControl:1.1.0"
-    implementation "com.github.codex128:Boost:1.1.0"
     //implementation 'org.apache.commons:commons-text'
     //implementation project(':utilities')
 }
