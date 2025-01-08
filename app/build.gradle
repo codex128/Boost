@@ -16,7 +16,7 @@ repositories {
 }
 
 project.ext {
-  jmeVer = '3.8.0-alpha2' 
+    jmeVer = '3.8.0-alpha2' 
 }
 
 dependencies {
@@ -27,5 +27,46 @@ dependencies {
     implementation "com.github.stephengold:SkyControl:1.1.0"
     //implementation 'org.apache.commons:commons-text'
     //implementation project(':utilities')
+}
+
+task copyJavadoc(dependsOn: javadoc) {
+    
+}
+
+// remove the generated javadocs in the /docs folder
+task cleanJavadoc(type: Delete) {
+    delete "$projectDir/docs/javadoc/"
+}
+
+clean {
+    dependsOn cleanJavadoc
+}
+
+build {
+    dependsOn copyJavadoc
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allJava
+    archiveClassifier = 'sources'
+}
+
+task javadocJar(type: Jar) {
+    from javadoc
+    archiveClassifier = 'javadoc'
+}
+
+javadoc {
+    failOnError = false
+}
+
+publishing {
+    publications {
+        MyPublication(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+        }
+    }
 }
 
