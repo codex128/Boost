@@ -14,3 +14,9 @@
 /ShaderLab/nbproject/private/
 /ShaderRuntime/nbproject/private/
 /ESBoost/dist/
+
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
