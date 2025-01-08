@@ -63,7 +63,7 @@ public class ImmediateMatDef extends MaterialDef {
     }
     
     public ImmediateMatDef addParam(VarType type, String name) {
-        return addParam(type, name, null);
+        return addParam(type, name, (Object)null);
     }
     public ImmediateMatDef addParam(VarType type, String name, Object defaultValue) {
         if (type.isTextureType()) {

@@ -54,6 +54,9 @@ public class ImmediateShader implements AssetLocator {
     public ImmediateShader() {
         this(null, false);
     }
+    public ImmediateShader(Shader.ShaderType type) {
+        this(type, false);
+    }
     public ImmediateShader(Shader.ShaderType type, boolean prettyCode) {
         this.type = type;
         this.prettyCode = prettyCode;
@@ -251,6 +254,9 @@ public class ImmediateShader implements AssetLocator {
             throw new IllegalStateException("Unclosed #ifdef");
         }
         return toString();
+    }
+    public String getRawCode() {
+        return code.toString();
     }
     public Shader.ShaderType getType() {
         return type;

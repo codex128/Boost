@@ -53,8 +53,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Saves the internal object, either as a ligitimate savable,
- * or by reflection.
+ * Saves the internal object, either as a legitimate savable or by reflection.
  * 
  * @author codex
  */
@@ -64,16 +63,16 @@ public class SavableObject implements ProxySavable<Object> {
     private static final String NAME = "name";
     private static final String OBJECT = "object";
     private static final String TYPE = "type";
-    private static final String ARGUMENTS = "arguments";
     private static final String NULL_TYPE = "Null";
-    private static final String CONSTRUCTED_TYPE = "Constructed";
+    private static final String UNKNOWN_TYPE = "Unknown";
     private static final Logger LOG = Logger.getLogger(SavableObject.class.getName());
     
     private String name;
     private Object object;
-    private Savable[] arguments;
     
-    public SavableObject() {}
+    public SavableObject() {
+        this(null, null);
+    }
     public SavableObject(String name) {
         this(name, null);
     }
@@ -181,6 +180,15 @@ public class SavableObject implements ProxySavable<Object> {
         } else if (object instanceof Short[][]) {
             out.write((short[][])object, OBJECT, new short[0][0]);
             out.write("Short[][]", TYPE, NULL_TYPE);
+        } else if (object instanceof Class) {
+            writeClass(out, (Class)object, OBJECT, Integer.class);
+            out.write("Class", TYPE, NULL_TYPE);
+        } else if (object instanceof Class[]) {
+            writeClassArray(out, (Class[])object, OBJECT);
+            out.write("Class[]", TYPE, NULL_TYPE);
+        } else if (object instanceof Class[][]) {
+            writeClassArray2D(out, (Class[][])object, OBJECT);
+            out.write("Class[][]", TYPE, NULL_TYPE);
         } else if (object instanceof BitSet) {
             out.write((BitSet)object, OBJECT, null);
             out.write("BitSet", TYPE, NULL_TYPE);
@@ -211,10 +219,9 @@ public class SavableObject implements ProxySavable<Object> {
         } else if (object instanceof IntMap) {
             out.writeIntSavableMap((IntMap)object, OBJECT, null);
             out.write("IntMap", TYPE, NULL_TYPE);
-        } else {
-            out.write(object.getClass().getName(), OBJECT, null);
-            out.write(arguments, ARGUMENTS, new Savable[0]);
-            out.write(CONSTRUCTED_TYPE, TYPE, NULL_TYPE);
+        } else if (object instanceof Object) {
+            writeClass(out, object.getClass(), OBJECT, null);
+            out.write(UNKNOWN_TYPE, TYPE, NULL_TYPE);
         }
     }
     @Override
@@ -304,6 +311,15 @@ public class SavableObject implements ProxySavable<Object> {
             case "Short[][]":
                 object = in.readShortArray2D(OBJECT, new short[0][0]);
                 break;
+            case "Class":
+                object = readClass(in, OBJECT, Integer.class);
+                break;
+            case "Class[]":
+                object = readClassArray(in, OBJECT);
+                break;
+            case "Class[][]":
+                object = readClassArray2D(in, OBJECT);
+                break;
             case "BitSet":
                 object = in.readBitSet(OBJECT, null);
                 break;
@@ -334,8 +350,16 @@ public class SavableObject implements ProxySavable<Object> {
             case "IntMap":
                 object = in.readIntSavableMap(OBJECT, null);
                 break;
-            case CONSTRUCTED_TYPE:
-                object = readConstructed(in);
+            case UNKNOWN_TYPE:
+                Class clazz = Objects.requireNonNull(readClass(in, OBJECT, null));
+                try {
+                    Constructor c = clazz.getDeclaredConstructor();
+                    c.setAccessible(true);
+                    object = c.newInstance();
+                } catch (NoSuchMethodException | SecurityException | InstantiationException
+                        | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+                    throw new IOException("Error instantiating object of unknown type: " + clazz.getName(), ex);
+                }
                 break;
             case NULL_TYPE:
                 object = null;
@@ -343,6 +367,9 @@ public class SavableObject implements ProxySavable<Object> {
             default:
                 LOG.log(Level.WARNING, "Attempted to load unsupported type {0}", type);
                 break;
+        }
+        while (object instanceof ProxySavable) {
+            object = ((ProxySavable)object).getObject();
         }
     }
     @Override
@@ -370,28 +397,6 @@ public class SavableObject implements ProxySavable<Object> {
         return Objects.equals(this.object, other.object);
     }
     
-    private Object readConstructed(InputCapsule in) throws IOException {
-        String className = in.readString(OBJECT, null);
-        Object[] args = in.readSavableArray(ARGUMENTS, new Savable[0]);
-        Class[] argTypes = new Class[args.length];
-        for (int i = 0; i < args.length; i++) {
-            if (args[i] instanceof ProxySavable) {
-                args[i] = ((ProxySavable)args[i]).getObject();
-            }
-            argTypes[i] = args[i].getClass();
-        }
-        try {
-            Constructor c = Class.forName(className).getDeclaredConstructor(argTypes);
-            c.setAccessible(true);
-            return c.newInstance(args);
-        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException
-                | InstantiationException | IllegalAccessException | IllegalArgumentException
-                | InvocationTargetException ex) {
-            LOG.log(Level.SEVERE, "Error instantiating saved object.", ex);
-            return null;
-        }
-    }
-    
     /**
      * Sets the name of this SavableObject.
      * <p>
@@ -404,24 +409,60 @@ public class SavableObject implements ProxySavable<Object> {
     }
     
     /**
-     * Sets the arguments used to instantiate the internal object
-     * if it is not savable.
-     * <p>
-     * default=null (no arguments)
-     * 
-     * @param arguments 
-     */
-    public void setArguments(Savable... arguments) {
-        this.arguments = arguments;
-    }
-    
-    /**
      * Gets the name.
      * 
      * @return 
      */
     public String getName() {
         return name;
+    }
+    
+    /**
+     * Writes the class to the OutputCapsule as a string.
+     * 
+     * @param out
+     * @param clazz
+     * @param name
+     * @param defVal
+     * @throws IOException 
+     */
+    public static void writeClass(OutputCapsule out, Class clazz, String name, Class defVal) throws IOException {
+        out.write(clazz.getName(), name, defVal.getName());
+    }
+    
+    /**
+     * Writes the array of classes to the OutputCapsule as an array of strings.
+     * 
+     * @param out
+     * @param array
+     * @param name
+     * @throws IOException 
+     */
+    public static void writeClassArray(OutputCapsule out, Class[] array, String name) throws IOException {
+        String[] names = new String[array.length];
+        for (int i = 0; i < array.length; i++) {
+            names[i] = array[i].getName();
+        }
+        out.write(names, name, new String[0]);
+    }
+    
+    /**
+     * Writes the 2D array of classes to the OutputCapsule as a 2D array of strings.
+     * 
+     * @param out
+     * @param array
+     * @param name
+     * @throws IOException 
+     */
+    public static void writeClassArray2D(OutputCapsule out, Class[][] array, String name) throws IOException {
+        String[][] names = new String[array.length][];
+        for (int i = 0; i < array.length; i++) {
+            names[i] = new String[array[i].length];
+            for (int j = 0; j < array[i].length; j++) {
+                names[i][j] = array[i][j].getName();
+            }
+        }
+        out.write(names, name, new String[0][0]);
     }
     
     /**
@@ -498,6 +539,82 @@ public class SavableObject implements ProxySavable<Object> {
         return readSavable(in, name, SavableObject.class, SavableObject.NULL).getObject(type);
     }
     
+    /**
+     * Reads the class from the InputCapsule.
+     * 
+     * @param in
+     * @param name
+     * @param defVal
+     * @return
+     * @throws IOException 
+     */
+    public static Class readClass(InputCapsule in, String name, Class defVal) throws IOException {
+        String className = in.readString(name, null);
+        if (className != null) {
+            try {
+                return Class.forName(className);
+            } catch (ClassNotFoundException ex) {
+                throw new RuntimeException("Failed to find class: " + className, ex);
+            }
+        } else {
+            return defVal;
+        }
+    }
+    
+    /**
+     * Reads the array of classes from the InputCapsule.
+     * 
+     * @param in
+     * @param name
+     * @return
+     * @throws IOException 
+     */
+    public static Class[] readClassArray(InputCapsule in, String name) throws IOException {
+        String[] names = in.readStringArray(name, new String[0]);
+        Class[] array = new Class[names.length];
+        try {
+            for (int i = 0; i < names.length; i++) {
+                array[i] = Class.forName(names[i]);
+            }
+        } catch (ClassNotFoundException ex) {
+            throw new RuntimeException("Failed to locate saved class by name.", ex);
+        }
+        return array;
+    }
+    
+    /**
+     * Reads the 2D array of classes from the InputCapsule.
+     * 
+     * @param in
+     * @param name
+     * @return
+     * @throws IOException 
+     */
+    public static Class[][] readClassArray2D(InputCapsule in, String name) throws IOException {
+        String[][] names = in.readStringArray2D(name, new String[0][0]);
+        Class[][] array = new Class[names.length][];
+        try {
+            for (int i = 0; i < names.length; i++) {
+                array[i] = new Class[names[i].length];
+                for (int j = 0; j < names[i].length; i++) {
+                    array[i][j] = Class.forName(names[i][j]);
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            throw new RuntimeException("Failed to locate saved class by name.", ex);
+        }
+        return array;
+    }
+    
+    /**
+     * Reads the named array list to the target collection.
+     * 
+     * @param in
+     * @param name
+     * @param target
+     * @return
+     * @throws IOException 
+     */
     public static Collection readToCollection(InputCapsule in, String name, Collection target) throws IOException {
         ArrayList<SavableObject> list = in.readSavableArrayList(name, new ArrayList<>());
         for (SavableObject obj : list) {

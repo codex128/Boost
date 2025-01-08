@@ -7,9 +7,11 @@ package codex.boost.material;
 import com.jme3.asset.AssetKey;
 import com.jme3.asset.AssetManager;
 import com.jme3.material.MatParam;
+import com.jme3.material.MatParamTexture;
 import com.jme3.material.Material;
 import com.jme3.material.MaterialDef;
 import com.jme3.material.TechniqueDef;
+import com.jme3.texture.image.ColorSpace;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -130,7 +132,12 @@ public class MaterialAdapter {
             // move material parameters
             for (MatParam p : tributary.getMaterialParams()) {
                 if (target.getMaterialParam(p.getName()) == null) {
-                    target.addMaterialParam(p.getVarType(), p.getName(), p.getValue());
+                    if (p instanceof MatParamTexture) {
+                        MatParamTexture t = (MatParamTexture)p;
+                        target.addMaterialParamTexture(t.getVarType(), t.getName(), t.getColorSpace(), t.getTextureValue());
+                    } else {
+                        target.addMaterialParam(p.getVarType(), p.getName(), p.getValue());
+                    }
                     MatParam clone = target.getMaterialParam(p.getName());
                     clone.setTypeCheckEnabled(p.isTypeCheckEnabled());
                 }
