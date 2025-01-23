@@ -1,22 +1,44 @@
-/dist/
-/build/
-/nbproject/
-/nbproject/private/
-/resources/desktop-deployment/
-/*.so
-/*.dll
-*.gltf
-*.glb
-*.xcf
-*.blend1
-/ESBoost/nbproject/private/
-/ESBoost/build/
-/ShaderLab/nbproject/private/
-/ShaderRuntime/nbproject/private/
-/ESBoost/dist/
-
-# Ignore Gradle project-specific cache directory
 .gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-# Ignore Gradle build output directory
-build
+### IntelliJ IDEA ###
+.idea/modules.xml
+.idea/jarRepositories.xml
+.idea/compiler.xml
+.idea/libraries/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### NetBeans ###
+/nbproject/
+/ESBoost/nbproject/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+*.so
+
+### VS Code ###
+.vscode/
+
+### Mac OS ###
+.DS_Store
