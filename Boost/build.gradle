@@ -11,7 +11,6 @@ plugins {
 
 repositories {
     mavenCentral()
-    jcenter()
 	maven { url "https://jitpack.io" }
 }
 
@@ -29,29 +28,29 @@ dependencies {
     //implementation project(':utilities')
 }
 
-task copyJavadoc(dependsOn: javadoc) {
-    
+tasks.register('copyJavadoc') {
+    dependsOn javadoc
 }
 
 // remove the generated javadocs in the /docs folder
-task cleanJavadoc(type: Delete) {
+tasks.register('cleanJavadoc', Delete) {
     delete "$projectDir/docs/javadoc/"
 }
 
 clean {
-    dependsOn cleanJavadoc
+    dependsOn "cleanJavadoc"
 }
 
 build {
-    dependsOn copyJavadoc
+    dependsOn "copyJavadoc"
 }
 
-task sourcesJar(type: Jar) {
+tasks.register('sourcesJar', Jar) {
     from sourceSets.main.allJava
     archiveClassifier = 'sources'
 }
 
-task javadocJar(type: Jar) {
+tasks.register('javadocJar', Jar) {
     from javadoc
     archiveClassifier = 'javadoc'
 }

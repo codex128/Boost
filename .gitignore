@@ -29,13 +29,11 @@ bin/
 !**/src/test/**/bin/
 
 ### NetBeans ###
-/nbproject/
-/ESBoost/nbproject/
+/nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-*.so
 
 ### VS Code ###
 .vscode/
