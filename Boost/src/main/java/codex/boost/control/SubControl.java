@@ -4,7 +4,6 @@
  */
 package codex.boost.control;
 
-import com.jme3.bullet.control.AbstractPhysicsControl;
 import com.jme3.renderer.RenderManager;
 import com.jme3.renderer.ViewPort;
 import com.jme3.scene.Spatial;
@@ -85,9 +84,6 @@ public abstract class SubControl <T extends Control> extends AbstractControl {
     public boolean dependencyActive() {
         if (dependency instanceof AbstractControl) {
             return ((AbstractControl)dependency).getSpatial() == spatial;
-        }
-        if (dependency instanceof AbstractPhysicsControl) {
-            return ((AbstractPhysicsControl)dependency).getSpatial() == spatial;
         }
         if (persistant) {
             for (int i = 0; i < spatial.getNumControls(); i++) 

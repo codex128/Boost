@@ -21,7 +21,7 @@ dependencies {
     implementation "org.jmonkeyengine:jme3-core:$jmeVer"
     implementation "com.simsilica:lemur:$lemurVer"
     implementation "com.simsilica:lemur-proto:$lemurProtoVer"
-    implementation "com.github.stephengold:Minie:$minieVer"
+    //implementation "com.github.stephengold:Minie:$minieVer"
     implementation "com.github.stephengold:SkyControl:$skyVer"
 }
 
